@@ -1,5 +1,7 @@
-// Active OMDb API Key
-const API_KEY = "f8a4d404";
+// Active API Keys
+const API_KEY = "f8a4d404"; // Replace with your OMDb API Key
+const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y"; // Replace with your Watchmode API Key
+const REGION = "IN"; // Country code: 'IN' for India, 'US' for United States
 
 // Application State Variables
 let users = {};
@@ -176,6 +178,33 @@ function createPlaylist() {
     alert(`Playlist "${trimmedName}" created successfully.`);
 }
 
+// Delete a Playlist
+function deletePlaylist(playlistToDelete) {
+    if (playlistToDelete === "Unassigned") {
+        alert("The default 'Unassigned' playlist cannot be deleted.");
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete the playlist "${playlistToDelete}"? Movies inside will be moved to 'Unassigned'.`)) {
+        // Move assigned movies to 'Unassigned'
+        movies.forEach(movie => {
+            if (movie.playlist === playlistToDelete) {
+                movie.playlist = "Unassigned";
+            }
+        });
+
+        // Remove playlist from list
+        playlists = playlists.filter(p => p !== playlistToDelete);
+
+        if (selectedFilter === playlistToDelete) {
+            selectedFilter = "All";
+        }
+
+        saveAndRefresh();
+        alert(`Playlist "${playlistToDelete}" has been deleted.`);
+    }
+}
+
 // Populate Playlist Dropdowns
 function populatePlaylistDropdowns() {
     const filterSelect = document.getElementById("playlistFilterSelect");
@@ -211,7 +240,37 @@ function handleFilterChange() {
     }
 }
 
-// Add Movie to Watchlist via OMDb API
+// Fetch Streaming Availability from Watchmode API
+async function fetchStreamingProviders(imdbId) {
+    if (!WATCHMODE_API_KEY || WATCHMODE_API_KEY === "YOUR_WATCHMODE_API_KEY") {
+        return [];
+    }
+
+    try {
+        const url = `https://api.watchmode.com/v1/title/${imdbId}/sources/?apiKey=${WATCHMODE_API_KEY}&regions=${REGION}`;
+        const response = await fetch(url);
+        const sources = await response.json();
+
+        if (!Array.isArray(sources)) return [];
+
+        const uniqueProviders = [];
+        const seenNames = new Set();
+
+        sources.forEach(source => {
+            if ((source.type === "sub" || source.type === "free") && !seenNames.has(source.name)) {
+                seenNames.add(source.name);
+                uniqueProviders.push(source.name);
+            }
+        });
+
+        return uniqueProviders;
+    } catch (error) {
+        console.error("Error fetching Watchmode data:", error);
+        return [];
+    }
+}
+
+// Add Movie to Watchlist via OMDb and Watchmode APIs
 async function addMovie() {
     const titleInput = document.getElementById("movieInput").value.trim();
     const yearInput = document.getElementById("yearInput").value.trim();
@@ -243,6 +302,9 @@ async function addMovie() {
             return;
         }
 
+        // Secondary Fetch for Streaming Providers
+        const streamingProviders = await fetchStreamingProviders(data.imdbID);
+
         const movieData = {
             imdbID: data.imdbID,
             title: data.Title,
@@ -254,6 +316,7 @@ async function addMovie() {
             plot: data.Plot,
             type: data.Type,
             playlist: chosenPlaylist,
+            ottProviders: streamingProviders,
             watched: false,
             addedAt: Date.now()
         };
@@ -274,7 +337,7 @@ function handleKeyPress(event) {
     if (event.key === "Enter") addMovie();
 }
 
-// Render Dashboard Grid Items
+// Render Dashboard Grid Items with Playlist Header Controls & OTT Badges
 function renderGrid() {
     const grid = document.getElementById("movieGrid");
     grid.innerHTML = "";
@@ -298,11 +361,26 @@ function renderGrid() {
         if (playlistMovies.length > 0 || selectedFilter !== "All") {
             const sectionHeader = document.createElement("div");
             sectionHeader.className = "playlist-section-header";
-            sectionHeader.innerHTML = `<h2>📁 ${playlistName} <span class="playlist-count">(${playlistMovies.length} items)</span></h2>`;
+            
+            const isDeletable = playlistName !== "Unassigned";
+            const deleteButtonHtml = isDeletable 
+                ? `<button class="btn-delete" style="padding: 2px 8px; font-size: 11px;" onclick="deletePlaylist('${playlistName}')">Delete Playlist</button>` 
+                : '';
+
+            sectionHeader.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>📁 ${playlistName} <span class="playlist-count">(${playlistMovies.length} items)</span></h2>
+                    ${deleteButtonHtml}
+                </div>
+            `;
             grid.appendChild(sectionHeader);
 
             playlistMovies.forEach((movie) => {
                 const globalIndex = movies.findIndex(m => m.imdbID === movie.imdbID);
+
+                const ottBadges = (movie.ottProviders && movie.ottProviders.length > 0)
+                    ? movie.ottProviders.map(provider => `<span class="ott-badge">${provider}</span>`).join(" ")
+                    : `<span class="ott-badge-none">Not Streaming</span>`;
 
                 const card = document.createElement("div");
                 card.className = `movie-card ${movie.watched ? 'watched' : ''}`;
@@ -316,6 +394,10 @@ function renderGrid() {
                         <div>
                             <h3 class="movie-title">${movie.title}</h3>
                             <p class="release-date">Released: ${movie.releaseDate} (${movie.type.toUpperCase()})</p>
+                            <div class="ott-container">
+                                <small>Available on:</small>
+                                <div class="ott-badges-wrapper">${ottBadges}</div>
+                            </div>
                         </div>
                         
                         <div class="playlist-selector">
