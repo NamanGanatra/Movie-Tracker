@@ -2,6 +2,7 @@
 const firebaseConfig = {
 apiKey: "AIzaSyBE_9UuuWsiIPlxHLIFI0LegMxAzsrYeH0",
   authDomain: "movie-tracker-96549.firebaseapp.com",
+  databaseURL: "https://movie-tracker-96549-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "movie-tracker-96549",
   storageBucket: "movie-tracker-96549.firebasestorage.app",
   messagingSenderId: "691062858006",
