@@ -1,38 +1,38 @@
-// Replace with your active OMDb API Key
-const API_KEY = "f8a4d404";
+// Active OMDb API Key
+const API_KEY = "YOUR_API_KEY";
 
-// Application State
+// Application State Variables
 let users = {};
 let activeUser = null;
 let movies = [];
-let playlists = ["All", "Unassigned"]; // Default filter options
-let selectedFilter = "All"; // Active view filter
+let playlists = ["Unassigned"];
+let selectedFilter = "All";
 
-// Initialize Page Data
+// Initial Setup Event Listener
 document.addEventListener("DOMContentLoaded", () => {
     loadUsersFromStorage();
     populateLoginDropdown();
 });
 
-// Load registered users directly from LocalStorage
+// Load Users from LocalStorage
 function loadUsersFromStorage() {
-    const saved = localStorage.getItem("app_users_db");
-    users = saved ? JSON.parse(saved) : {};
+    const savedUsers = localStorage.getItem("app_users_db");
+    users = savedUsers ? JSON.parse(savedUsers) : {};
 }
 
-// Clear all saved profiles & start fresh
+// Clear All Stored App Profiles and Data
 function clearAllProfiles() {
-    if (confirm("Kya aap saare saved profiles aur watchlists delete karna chahte hain?")) {
+    if (confirm("Are you sure you want to delete all saved profiles and watchlists? This action cannot be undone.")) {
         localStorage.clear();
         users = {};
         movies = [];
-        playlists = ["All", "Unassigned"];
+        playlists = ["Unassigned"];
         populateLoginDropdown();
-        alert("Sare purane profiles delete ho gaye hain!");
+        alert("All profiles and stored data have been reset.");
     }
 }
 
-// Populate Login Select Dropdown
+// Populate Login Dropdown List
 function populateLoginDropdown() {
     const select = document.getElementById("loginUserSelect");
     const loginFormContainer = document.getElementById("loginFormContainer");
@@ -59,11 +59,12 @@ function populateLoginDropdown() {
 
 // User Authentication: Login
 function login() {
-    const username = document.getElementById("loginUserSelect").value;
+    const select = document.getElementById("loginUserSelect");
+    const username = select ? select.value : null;
     const pin = document.getElementById("loginPinInput").value.trim();
 
     if (!username || !pin) {
-        alert("Please select a profile and enter PIN.");
+        alert("Please select a profile and enter your 4-digit PIN.");
         return;
     }
 
@@ -71,38 +72,61 @@ function login() {
         activeUser = username;
         document.getElementById("authScreen").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
-        document.getElementById("activeUserLabel").innerHTML = `Logged in as: <strong>${activeUser}</strong>`;
+        document.getElementById("activeUserLabel").innerText = `User: ${activeUser}`;
         document.getElementById("welcomeTitle").innerText = `🎬 ${activeUser}'s Watchlist`;
         document.getElementById("loginPinInput").value = "";
         
         loadUserData();
     } else {
-        alert("Incorrect PIN! Please try again.");
+        alert("Incorrect PIN. Please try again.");
     }
 }
 
-// Logout Functionality
+// User Authentication: Delete Profile
+function deleteSelectedProfile() {
+    const select = document.getElementById("loginUserSelect");
+    const selectedUsername = select ? select.value : null;
+
+    if (!selectedUsername) {
+        alert("No profile selected to delete.");
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete the profile "${selectedUsername}" and all its saved movies/playlists?`)) {
+        delete users[selectedUsername];
+        localStorage.setItem("app_users_db", JSON.stringify(users));
+
+        localStorage.removeItem(`watchlist_${selectedUsername}`);
+        localStorage.removeItem(`playlists_${selectedUsername}`);
+
+        populateLoginDropdown();
+        alert(`Profile "${selectedUsername}" has been deleted.`);
+    }
+}
+
+// Logout Action
 function logout() {
     activeUser = null;
     movies = [];
-    playlists = ["All", "Unassigned"];
+    playlists = ["Unassigned"];
+    selectedFilter = "All";
     document.getElementById("dashboard").style.display = "none";
     document.getElementById("authScreen").style.display = "flex";
     populateLoginDropdown();
 }
 
-// User Registration
+// Create New Profile
 function registerUser() {
     const name = document.getElementById("regNameInput").value.trim();
     const pin = document.getElementById("regPinInput").value.trim();
 
-    if (!name || pin.length !== 4) {
-        alert("Please enter a valid profile name and a 4-digit PIN.");
+    if (!name || pin.length !== 4 || isNaN(pin)) {
+        alert("Please enter a valid profile name and a 4-digit numerical PIN.");
         return;
     }
 
     if (users[name]) {
-        alert("Profile name already exists!");
+        alert("A profile with this name already exists.");
         return;
     }
 
@@ -113,10 +137,10 @@ function registerUser() {
     closeModal("registerModal");
     document.getElementById("regNameInput").value = "";
     document.getElementById("regPinInput").value = "";
-    alert(`Profile "${name}" created successfully!`);
+    alert(`Profile "${name}" created successfully.`);
 }
 
-// Load Movies & Playlists for Active User
+// Load Active User Movies and Playlists
 function loadUserData() {
     const savedMovies = localStorage.getItem(`watchlist_${activeUser}`);
     movies = savedMovies ? JSON.parse(savedMovies) : [];
@@ -128,7 +152,7 @@ function loadUserData() {
     renderGrid();
 }
 
-// Save State
+// Save State to LocalStorage
 function saveAndRefresh() {
     localStorage.setItem(`watchlist_${activeUser}`, JSON.stringify(movies));
     localStorage.setItem(`playlists_${activeUser}`, JSON.stringify(playlists));
@@ -136,27 +160,24 @@ function saveAndRefresh() {
     renderGrid();
 }
 
-// Create New Playlist
+// Create a Custom Playlist
 function createPlaylist() {
-    const playlistInput = document.getElementById("newPlaylistInput");
-    const playlistName = playlistInput ? playlistInput.value.trim() : prompt("Nayi Playlist / Genre ka naam likho:");
+    const playlistName = prompt("Enter new playlist/genre name:");
+    if (!playlistName || !playlistName.trim()) return;
 
-    if (!playlistName) return;
-
-    if (playlists.some(p => p.toLowerCase() === playlistName.toLowerCase())) {
-        alert("Ye playlist pehle se bani hui hai!");
+    const trimmedName = playlistName.trim();
+    if (playlists.some(p => p.toLowerCase() === trimmedName.toLowerCase())) {
+        alert("This playlist already exists.");
         return;
     }
 
-    playlists.push(playlistName);
-    if (playlistInput) playlistInput.value = "";
+    playlists.push(trimmedName);
     saveAndRefresh();
-    alert(`Playlist "${playlistName}" successfully create ho gayi!`);
+    alert(`Playlist "${trimmedName}" created successfully.`);
 }
 
-// Populate Dropdowns for Filtering and Adding
+// Populate Playlist Dropdowns
 function populatePlaylistDropdowns() {
-    // 1. Top Filter Dropdown
     const filterSelect = document.getElementById("playlistFilterSelect");
     if (filterSelect) {
         filterSelect.innerHTML = `<option value="All">All Playlists</option>`;
@@ -169,7 +190,6 @@ function populatePlaylistDropdowns() {
         });
     }
 
-    // 2. Add Movie Playlist Selection Dropdown
     const addSelect = document.getElementById("addPlaylistSelect");
     if (addSelect) {
         addSelect.innerHTML = "";
@@ -182,7 +202,7 @@ function populatePlaylistDropdowns() {
     }
 }
 
-// Change Filter View
+// Handle Filter Selection Change
 function handleFilterChange() {
     const filterSelect = document.getElementById("playlistFilterSelect");
     if (filterSelect) {
@@ -191,7 +211,7 @@ function handleFilterChange() {
     }
 }
 
-// Add Movie/Show with Playlist Support
+// Add Movie to Watchlist via OMDb API
 async function addMovie() {
     const titleInput = document.getElementById("movieInput").value.trim();
     const yearInput = document.getElementById("yearInput").value.trim();
@@ -213,13 +233,13 @@ async function addMovie() {
         const data = await response.json();
 
         if (data.Response === "False") {
-            alert("Title not found!");
+            alert("Title not found in the database. Try refining your query.");
             return;
         }
 
         const isDuplicate = movies.some(item => item.imdbID === data.imdbID);
         if (isDuplicate) {
-            alert("This title is already in your watchlist!");
+            alert("This title is already in your watchlist.");
             return;
         }
 
@@ -245,21 +265,21 @@ async function addMovie() {
         document.getElementById("yearInput").value = "";
         document.getElementById("typeInput").value = "";
     } catch (error) {
-        alert("Network error fetching data.");
+        alert("Network error. Unable to fetch movie details.");
     }
 }
 
-// Handle Enter Key
+// Keypress Listener for Enter
 function handleKeyPress(event) {
     if (event.key === "Enter") addMovie();
 }
 
-// Render Grid grouped by Playlists / Sections
+// Render Dashboard Grid Items
 function renderGrid() {
     const grid = document.getElementById("movieGrid");
     grid.innerHTML = "";
 
-    // Sort movies: Unwatched pehle, Watched baad me
+    // Sort: Unwatched movies first (false), Watched movies last (true)
     movies.sort((a, b) => {
         if (a.watched === b.watched) {
             return (b.addedAt || 0) - (a.addedAt || 0);
@@ -270,18 +290,15 @@ function renderGrid() {
     let watchedCount = 0;
     movies.forEach(m => { if (m.watched) watchedCount++; });
 
-    // Filter Logic
     let playlistsToDisplay = selectedFilter === "All" ? playlists : [selectedFilter];
 
     playlistsToDisplay.forEach(playlistName => {
         const playlistMovies = movies.filter(m => (m.playlist || "Unassigned") === playlistName);
 
         if (playlistMovies.length > 0 || selectedFilter !== "All") {
-            // Create Playlist Section Header
             const sectionHeader = document.createElement("div");
             sectionHeader.className = "playlist-section-header";
-            sectionHeader.style.cssText = "width: 100%; grid-column: 1 / -1; margin-top: 20px; border-bottom: 2px solid #e50914; padding-bottom: 5px;";
-            sectionHeader.innerHTML = `<h2 style="color: #fff; display: flex; align-items: center; gap: 10px;">📁 ${playlistName} <span style="font-size: 14px; color: #8c8c8c;">(${playlistMovies.length} items)</span></h2>`;
+            sectionHeader.innerHTML = `<h2>📁 ${playlistName} <span class="playlist-count">(${playlistMovies.length} items)</span></h2>`;
             grid.appendChild(sectionHeader);
 
             playlistMovies.forEach((movie) => {
@@ -301,9 +318,9 @@ function renderGrid() {
                             <p class="release-date">Released: ${movie.releaseDate} (${movie.type.toUpperCase()})</p>
                         </div>
                         
-                        <div style="margin: 8px 0;">
-                            <label style="font-size: 12px; color: #bbb;">Playlist:</label>
-                            <select onchange="changeMoviePlaylist(${globalIndex}, this.value)" style="background: #222; color: #fff; border: 1px solid #444; border-radius: 4px; padding: 2px 5px; font-size: 12px; margin-left: 5px;">
+                        <div class="playlist-selector">
+                            <label>Playlist:</label>
+                            <select onchange="changeMoviePlaylist(${globalIndex}, this.value)">
                                 ${playlists.map(pl => `<option value="${pl}" ${movie.playlist === pl ? 'selected' : ''}>${pl}</option>`).join('')}
                             </select>
                         </div>
@@ -326,7 +343,7 @@ function renderGrid() {
         }
     });
 
-    // Progress Bar Update
+    // Update Progress Indicator
     const totalMovies = movies.length;
     const progressPercent = totalMovies === 0 ? 0 : Math.round((watchedCount / totalMovies) * 100);
 
@@ -336,25 +353,25 @@ function renderGrid() {
     if (progressBar) progressBar.style.width = `${progressPercent}%`;
 }
 
-// Change Playlist of an existing Movie
+// Re-assign Movie Playlist
 function changeMoviePlaylist(index, newPlaylist) {
     movies[index].playlist = newPlaylist;
     saveAndRefresh();
 }
 
-// Toggle watched status
+// Toggle Watched Status
 function toggleWatched(index) {
     movies[index].watched = !movies[index].watched;
     saveAndRefresh();
 }
 
-// Delete item
+// Remove Item from Watchlist
 function deleteMovie(index) {
     movies.splice(index, 1);
     saveAndRefresh();
 }
 
-// About Modal
+// Display Movie Information Modal
 function openAbout(index) {
     const movie = movies[index];
     document.getElementById("modalPoster").src = movie.poster;
@@ -367,6 +384,7 @@ function openAbout(index) {
     openModal("aboutModal");
 }
 
+// Modal Handlers
 function openModal(modalId) {
     document.getElementById(modalId).style.display = "flex";
 }
