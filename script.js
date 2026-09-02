@@ -1,40 +1,59 @@
+// Firebase Configuration & Initialization
+const firebaseConfig = {
+apiKey: "AIzaSyBE_9UuuWsiIPlxHLIFI0LegMxAzsrYeH0",
+  authDomain: "movie-tracker-96549.firebaseapp.com",
+  projectId: "movie-tracker-96549",
+  storageBucket: "movie-tracker-96549.firebasestorage.app",
+  messagingSenderId: "691062858006",
+  appId: "1:691062858006:web:f3e207d973fe7aee64f037",
+  measurementId: "G-C13XJBKGHV"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 // Active API Keys
 const API_KEY = "f8a4d404"; // Replace with your OMDb API Key
-const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y"; // Replace with your Watchmode API Key
-const REGION = "IN"; // Country code: 'IN' for India, 'US' for United States
+const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y "; // Replace with your Watchmode API Key
+const REGION = "IN"; // Region code for India OTT options
 
-// State Variables
+// Application State Variables
 let users = {};
 let activeUser = null;
 let movies = [];
 let playlists = ["Unassigned"];
 let selectedFilter = "All";
 
-// Event Listener on Load
+// Initial Setup Event Listener
 document.addEventListener("DOMContentLoaded", () => {
     loadUsersFromStorage();
-    populateLoginDropdown();
 });
 
-// Load Users DB
+// Load All Profiles Real-time from Cloud Database
 function loadUsersFromStorage() {
-    const savedUsers = localStorage.getItem("app_users_db");
-    users = savedUsers ? JSON.parse(savedUsers) : {};
+    db.ref("users").on("value", (snapshot) => {
+        users = snapshot.val() || {};
+        populateLoginDropdown();
+    });
 }
 
-// Reset All Profiles Data
+// Clear All Stored Cloud Profiles and Data
 function clearAllProfiles() {
-    if (confirm("Are you sure you want to delete all saved profiles and watchlists?")) {
-        localStorage.clear();
-        users = {};
-        movies = [];
-        playlists = ["Unassigned"];
-        populateLoginDropdown();
-        alert("All profiles and data have been reset.");
+    if (confirm("Are you sure you want to delete ALL cloud profiles and watchlists? This action cannot be undone.")) {
+        db.ref().remove()
+            .then(() => {
+                users = {};
+                movies = [];
+                playlists = ["Unassigned"];
+                populateLoginDropdown();
+                alert("All cloud data has been reset successfully.");
+            })
+            .catch(error => alert("Error resetting data: " + error.message));
     }
 }
 
-// Populate Login Profiles Dropdown
+// Populate Login Dropdown List
 function populateLoginDropdown() {
     const select = document.getElementById("loginUserSelect");
     const loginFormContainer = document.getElementById("loginFormContainer");
@@ -59,14 +78,14 @@ function populateLoginDropdown() {
     }
 }
 
-// Login Profile
+// User Authentication: Login
 function login() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
     const pin = document.getElementById("loginPinInput").value.trim();
 
     if (!username || !pin) {
-        alert("Please select a profile and enter PIN.");
+        alert("Please select a profile and enter your 4-digit PIN.");
         return;
     }
 
@@ -80,34 +99,33 @@ function login() {
         
         loadUserData();
     } else {
-        alert("Incorrect PIN.");
+        alert("Incorrect PIN. Please try again.");
     }
 }
 
-// Delete Selected Profile
+// Delete Profile from Cloud
 function deleteSelectedProfile() {
     const select = document.getElementById("loginUserSelect");
     const selectedUsername = select ? select.value : null;
 
     if (!selectedUsername) {
-        alert("No profile selected.");
+        alert("No profile selected to delete.");
         return;
     }
 
-    if (confirm(`Are you sure you want to delete profile "${selectedUsername}"?`)) {
-        delete users[selectedUsername];
-        localStorage.setItem("app_users_db", JSON.stringify(users));
-
-        localStorage.removeItem(`watchlist_${selectedUsername}`);
-        localStorage.removeItem(`playlists_${selectedUsername}`);
-
-        populateLoginDropdown();
-        alert(`Profile "${selectedUsername}" deleted.`);
+    if (confirm(`Are you sure you want to delete profile "${selectedUsername}" and all its saved data from Cloud?`)) {
+        db.ref(`users/${selectedUsername}`).remove();
+        db.ref(`watchlists/${selectedUsername}`).remove()
+            .then(() => alert(`Profile "${selectedUsername}" deleted from Cloud.`))
+            .catch(error => alert("Error deleting profile: " + error.message));
     }
 }
 
-// Logout Profile
+// Logout Action
 function logout() {
+    if (activeUser) {
+        db.ref(`watchlists/${activeUser}`).off(); // Detach real-time listener
+    }
     activeUser = null;
     movies = [];
     playlists = ["Unassigned"];
@@ -117,59 +135,65 @@ function logout() {
     populateLoginDropdown();
 }
 
-// Register New Profile
+// Create New Profile on Cloud (Prevents Duplicates)
 function registerUser() {
     const name = document.getElementById("regNameInput").value.trim();
     const pin = document.getElementById("regPinInput").value.trim();
 
     if (!name || pin.length !== 4 || isNaN(pin)) {
-        alert("Please enter a valid profile name and 4-digit PIN.");
+        alert("Please enter a valid profile name and a 4-digit numerical PIN.");
         return;
     }
 
     if (users[name]) {
-        alert("Profile name already exists.");
+        alert("A profile with this name already exists! Choose a different name.");
         return;
     }
 
-    users[name] = { pin: pin };
-    localStorage.setItem("app_users_db", JSON.stringify(users));
-    
-    populateLoginDropdown();
-    closeModal("registerModal");
-    document.getElementById("regNameInput").value = "";
-    document.getElementById("regPinInput").value = "";
-    alert(`Profile "${name}" created successfully.`);
+    db.ref(`users/${name}`).set({ pin: pin }, (error) => {
+        if (error) {
+            alert("Error creating profile: " + error.message);
+        } else {
+            closeModal("registerModal");
+            document.getElementById("regNameInput").value = "";
+            document.getElementById("regPinInput").value = "";
+            alert(`Profile "${name}" created successfully on Cloud!`);
+        }
+    });
 }
 
-// Load Active User Data
+// Load Active User Data with Real-time Cloud Listener
 function loadUserData() {
-    const savedMovies = localStorage.getItem(`watchlist_${activeUser}`);
-    movies = savedMovies ? JSON.parse(savedMovies) : [];
+    if (!activeUser) return;
 
-    const savedPlaylists = localStorage.getItem(`playlists_${activeUser}`);
-    playlists = savedPlaylists ? JSON.parse(savedPlaylists) : ["Unassigned", "Comedy", "Action"];
+    db.ref(`watchlists/${activeUser}`).on("value", (snapshot) => {
+        const data = snapshot.val() || {};
+        movies = data.movies || [];
+        playlists = data.playlists || ["Unassigned", "Comedy", "Action"];
 
-    populatePlaylistDropdowns();
-    renderGrid();
+        populatePlaylistDropdowns();
+        renderGrid();
+    });
 }
 
-// Save & Refresh State
+// Push Data Changes to Cloud Realtime Database
 function saveAndRefresh() {
-    localStorage.setItem(`watchlist_${activeUser}`, JSON.stringify(movies));
-    localStorage.setItem(`playlists_${activeUser}`, JSON.stringify(playlists));
-    populatePlaylistDropdowns();
-    renderGrid();
+    if (!activeUser) return;
+
+    db.ref(`watchlists/${activeUser}`).set({
+        movies: movies,
+        playlists: playlists
+    });
 }
 
-// Create New Playlist
+// Create a Custom Playlist
 function createPlaylist() {
     const playlistName = prompt("Enter new playlist/genre name:");
     if (!playlistName || !playlistName.trim()) return;
 
     const trimmedName = playlistName.trim();
     if (playlists.some(p => p.toLowerCase() === trimmedName.toLowerCase())) {
-        alert("Playlist already exists.");
+        alert("This playlist already exists.");
         return;
     }
 
@@ -185,14 +209,12 @@ function deletePlaylist(playlistToDelete) {
     }
 
     if (confirm(`Are you sure you want to delete the playlist "${playlistToDelete}"? Movies inside will move to 'Unassigned'.`)) {
-        // Re-assign items in deleted playlist to 'Unassigned'
         movies.forEach(movie => {
             if (movie.playlist === playlistToDelete) {
                 movie.playlist = "Unassigned";
             }
         });
 
-        // Filter out deleted playlist
         playlists = playlists.filter(p => p !== playlistToDelete);
 
         if (selectedFilter === playlistToDelete) {
@@ -230,7 +252,7 @@ function populatePlaylistDropdowns() {
     }
 }
 
-// Handle Filter Change
+// Handle Filter Selection Change
 function handleFilterChange() {
     const filterSelect = document.getElementById("playlistFilterSelect");
     if (filterSelect) {
@@ -239,7 +261,7 @@ function handleFilterChange() {
     }
 }
 
-// Fetch Streaming Providers from Watchmode
+// Fetch Streaming Providers from Watchmode API
 async function fetchStreamingProviders(imdbId) {
     if (!WATCHMODE_API_KEY || WATCHMODE_API_KEY === "YOUR_WATCHMODE_API_KEY") {
         return [];
@@ -269,7 +291,7 @@ async function fetchStreamingProviders(imdbId) {
     }
 }
 
-// Add Movie/Show
+// Add Movie to Cloud Watchlist
 async function addMovie() {
     const titleInput = document.getElementById("movieInput").value.trim();
     const yearInput = document.getElementById("yearInput").value.trim();
@@ -301,7 +323,6 @@ async function addMovie() {
             return;
         }
 
-        // Secondary Fetch: Watchmode OTT
         const streamingProviders = await fetchStreamingProviders(data.imdbID);
 
         const movieData = {
@@ -331,17 +352,16 @@ async function addMovie() {
     }
 }
 
-// Enter Key Handler
+// Keypress Listener for Enter Key
 function handleKeyPress(event) {
     if (event.key === "Enter") addMovie();
 }
 
-// Render Grid
+// Render Dashboard Grid Items
 function renderGrid() {
     const grid = document.getElementById("movieGrid");
     grid.innerHTML = "";
 
-    // Sort: Unwatched movies top, Watched bottom
     movies.sort((a, b) => {
         if (a.watched === b.watched) {
             return (b.addedAt || 0) - (a.addedAt || 0);
@@ -357,7 +377,6 @@ function renderGrid() {
     playlistsToDisplay.forEach(playlistName => {
         const playlistMovies = movies.filter(m => (m.playlist || "Unassigned") === playlistName);
 
-        // Always render header for playlists
         const sectionHeader = document.createElement("div");
         sectionHeader.className = "playlist-section-header";
         
@@ -424,7 +443,6 @@ function renderGrid() {
         });
     });
 
-    // Update Progress
     const totalMovies = movies.length;
     const progressPercent = totalMovies === 0 ? 0 : Math.round((watchedCount / totalMovies) * 100);
 
@@ -434,7 +452,7 @@ function renderGrid() {
     if (progressBar) progressBar.style.width = `${progressPercent}%`;
 }
 
-// Change Movie Playlist
+// Re-assign Movie Playlist
 function changeMoviePlaylist(index, newPlaylist) {
     movies[index].playlist = newPlaylist;
     saveAndRefresh();
@@ -452,7 +470,7 @@ function deleteMovie(index) {
     saveAndRefresh();
 }
 
-// Open Details Modal
+// Display Movie Modal Details
 function openAbout(index) {
     const movie = movies[index];
     document.getElementById("modalPoster").src = movie.poster;
@@ -465,7 +483,7 @@ function openAbout(index) {
     openModal("aboutModal");
 }
 
-// Modal Toggle Functions
+// Modal View Functions
 function openModal(modalId) {
     document.getElementById(modalId).style.display = "flex";
 }
