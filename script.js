@@ -1,5 +1,5 @@
 // Active OMDb API Key
-const API_KEY = "YOUR_API_KEY";
+const API_KEY = "f8a4d404";
 
 // Application State Variables
 let users = {};
