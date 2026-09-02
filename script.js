@@ -138,28 +138,43 @@ function logout() {
 
 // Create New Profile on Cloud (Prevents Duplicates)
 function registerUser() {
-    const name = document.getElementById("regNameInput").value.trim();
-    const pin = document.getElementById("regPinInput").value.trim();
+    console.log("Register button clicked!");
+    
+    const nameInput = document.getElementById("regNameInput");
+    const pinInput = document.getElementById("regPinInput");
+
+    if (!nameInput || !pinInput) {
+        alert("HTML input elements missing!");
+        return;
+    }
+
+    const name = nameInput.value.trim();
+    const pin = pinInput.value.trim();
+
+    console.log("Attempting register for:", name, "with PIN length:", pin.length);
 
     if (!name || pin.length !== 4 || isNaN(pin)) {
-        alert("Please enter a valid profile name and a 4-digit numerical PIN.");
+        alert("Please enter a valid profile name and 4-digit numerical PIN.");
         return;
     }
 
     if (users[name]) {
-        alert("A profile with this name already exists! Choose a different name.");
+        alert("Profile name already exists!");
         return;
     }
 
-    db.ref(`users/${name}`).set({ pin: pin }, (error) => {
-        if (error) {
-            alert("Error creating profile: " + error.message);
-        } else {
-            closeModal("registerModal");
-            document.getElementById("regNameInput").value = "";
-            document.getElementById("regPinInput").value = "";
-            alert(`Profile "${name}" created successfully on Cloud!`);
-        }
+    // Direct write to Firebase Realtime Database
+    db.ref("users/" + name).set({
+        pin: pin
+    }).then(() => {
+        console.log("Successfully saved to Firebase!");
+        closeModal("registerModal");
+        nameInput.value = "";
+        pinInput.value = "";
+        alert(`Profile "${name}" created successfully on Cloud!`);
+    }).catch((error) => {
+        console.error("Firebase write error details:", error);
+        alert("Firebase error: " + error.message);
     });
 }
 
