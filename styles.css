@@ -11,176 +11,157 @@ body {
     min-height: 100vh;
 }
 
-/* Authentication Screen */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Auth Styling */
 .auth-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-    background: radial-gradient(circle, #2c2c2c 0%, #141414 100%);
+    height: 100vh;
 }
 
-.auth-box {
+.auth-card {
     background: #1f1f1f;
     padding: 30px;
     border-radius: 8px;
     width: 100%;
-    max-width: 420px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    max-width: 380px;
     text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-.auth-box h1 {
+.auth-card h2 {
+    margin-bottom: 15px;
     color: #e50914;
-    margin-bottom: 8px;
-}
-
-.subtitle {
-    font-size: 14px;
-    color: #aaa;
-    margin-bottom: 20px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    text-align: left;
+    margin-top: 15px;
 }
 
 .form-group label {
+    text-align: left;
     font-size: 13px;
-    color: #ccc;
-}
-
-.select-row {
-    display: flex;
-    gap: 8px;
-}
-
-.select-row select {
-    flex: 1;
+    color: #aaa;
 }
 
 input, select {
-    padding: 10px 12px;
-    border-radius: 4px;
-    border: 1px solid #333;
+    width: 100%;
+    padding: 10px;
     background: #2b2b2b;
+    border: 1px solid #444;
+    border-radius: 4px;
     color: #fff;
     font-size: 14px;
-    outline: none;
 }
 
 input:focus, select:focus {
+    outline: none;
     border-color: #e50914;
 }
 
-.auth-divider {
+.auth-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.divider {
+    border: 0;
+    border-top: 1px solid #333;
     margin: 20px 0;
-    color: #666;
-    font-size: 12px;
-    position: relative;
+}
+
+.auth-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 /* Buttons */
 button {
-    cursor: pointer;
+    padding: 10px 15px;
     border: none;
     border-radius: 4px;
-    padding: 10px 16px;
-    font-weight: 600;
-    transition: background 0.2s;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
 }
 
 .btn-primary {
     background: #e50914;
-    color: white;
+    color: #fff;
 }
 
 .btn-primary:hover {
-    background: #f40612;
+    background: #f6121d;
 }
 
 .btn-secondary {
     background: #333;
-    color: white;
+    color: #fff;
 }
 
 .btn-secondary:hover {
     background: #444;
 }
 
-.btn-danger {
-    background: #b9090b;
-    color: white;
+.btn-delete, .btn-logout {
+    background: #b20710;
+    color: #fff;
 }
 
-.btn-danger-outline {
+.btn-delete:hover, .btn-logout:hover {
+    background: #dc1a22;
+}
+
+.btn-danger-link {
     background: transparent;
-    color: #e50914;
-    border: 1px solid #e50914;
-}
-
-.btn-danger-outline:hover {
-    background: #e50914;
-    color: white;
-}
-
-.btn-link {
-    background: transparent;
-    color: #8c8c8c;
-    text-decoration: underline;
+    color: #888;
     font-size: 12px;
-    margin-top: 10px;
 }
 
-.info-msg {
-    background: #332200;
-    color: #ffcc00;
-    padding: 10px;
-    border-radius: 4px;
-    font-size: 13px;
-    margin-bottom: 15px;
+.btn-danger-link:hover {
+    color: #e50914;
 }
 
-/* Main Dashboard */
-.dashboard-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+.btn-about {
+    background: #0071eb;
+    color: #fff;
 }
 
-.main-header {
+.btn-about:hover {
+    background: #1b82f8;
+}
+
+/* Header Nav */
+.top-nav {
+    background: #000;
+    padding: 15px 20px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #333;
-    padding-bottom: 15px;
-    margin-bottom: 20px;
+    justify-content: flex-end;
 }
 
-.header-left {
+.user-info {
     display: flex;
     align-items: center;
     gap: 15px;
 }
 
-.user-badge {
-    background: #333;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
+/* Subtitle & Progress */
+.subtitle {
     color: #aaa;
+    margin-bottom: 20px;
 }
 
-.header-right {
-    display: flex;
-    gap: 10px;
-}
-
-/* Progress Bar */
 .progress-section {
     background: #1f1f1f;
     padding: 15px;
@@ -193,13 +174,12 @@ button {
     justify-content: space-between;
     font-size: 14px;
     margin-bottom: 8px;
-    color: #ccc;
 }
 
 .progress-bar-bg {
     background: #333;
-    height: 10px;
-    border-radius: 5px;
+    height: 8px;
+    border-radius: 4px;
     overflow: hidden;
 }
 
@@ -211,22 +191,20 @@ button {
 }
 
 /* Controls */
-.controls-section {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    justify-content: space-between;
+.controls-card {
     background: #1f1f1f;
     padding: 15px;
     border-radius: 6px;
-    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
 }
 
-.search-box {
+.search-box, .filter-box {
     display: flex;
-    flex-wrap: wrap;
     gap: 10px;
-    flex: 1;
+    flex-wrap: wrap;
 }
 
 .search-box input[type="text"] {
@@ -234,271 +212,18 @@ button {
     min-width: 200px;
 }
 
-.short-input {
-    width: 120px;
+.search-box input[type="number"], .search-box select, .filter-box select {
+    flex: 1;
+    min-width: 120px;
 }
 
-.filter-box {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-/* Movie Grid */
+/* Grid & Cards */
 .movie-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 20px;
 }
 
-.playlist-section-header {
-    grid-column: 1 / -1;
-    margin-top: 20px;
-    border-bottom: 2px solid #e50914;
-    padding-bottom: 8px;
-}
-
-.playlist-section-header h2 {
-    font-size: 20px;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.playlist-count {
-    font-size: 13px;
-    color: #8c8c8c;
-    font-weight: normal;
-}
-
-/* Movie Card */
-.movie-card {
-    background: #1f1f1f;
-    border-radius: 6px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    border: 1px solid #2c2c2c;
-    transition: transform 0.2s, border-color 0.2s;
-}
-
-.movie-card:hover {
-    transform: translateY(-4px);
-    border-color: #444;
-}
-
-.movie-card.watched {
-    opacity: 0.55;
-    filter: grayscale(0.4);
-}
-
-.poster-wrapper {
-    position: relative;
-    width: 100%;
-    height: 300px;
-    background: #000;
-}
-
-.poster-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.imdb-tag {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(0, 0, 0, 0.8);
-    color: #f5c518;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.card-content {
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
-    justify-content: space-between;
-}
-
-.movie-title {
-    font-size: 16px;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.release-date {
-    font-size: 12px;
-    color: #8c8c8c;
-}
-
-.playlist-selector {
-    margin: 4px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.playlist-selector label {
-    font-size: 11px;
-    color: #aaa;
-}
-
-.playlist-selector select {
-    padding: 2px 6px;
-    font-size: 11px;
-    background: #2a2a2a;
-}
-
-.card-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #2a2a2a;
-}
-
-.checkbox-label {
-    font-size: 12px;
-    color: #ccc;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 6px;
-}
-
-.btn-about {
-    background: #333;
-    color: #fff;
-    padding: 4px 8px;
-    font-size: 11px;
-}
-
-.btn-delete {
-    background: rgba(229, 9, 20, 0.2);
-    color: #e50914;
-    padding: 4px 8px;
-    font-size: 11px;
-}
-
-.btn-delete:hover {
-    background: #e50914;
-    color: #fff;
-}
-
-/* Modals */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: #1f1f1f;
-    padding: 25px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 400px;
-    position: relative;
-}
-
-.modal-large {
-    max-width: 650px;
-}
-
-.close-btn {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    font-size: 22px;
-    color: #8c8c8c;
-    cursor: pointer;
-}
-
-.close-btn:hover {
-    color: #fff;
-}
-
-.about-container {
-    display: flex;
-    gap: 20px;
-    margin-top: 10px;
-}
-
-.modal-poster {
-    width: 180px;
-    height: 260px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-.about-details {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.meta-tags {
-    display: flex;
-    gap: 8px;
-    font-size: 12px;
-}
-
-.badge-rating {
-    background: #f5c518;
-    color: #000;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-weight: bold;
-}
-
-.badge-info {
-    background: #333;
-    color: #ccc;
-    padding: 2px 6px;
-    border-radius: 3px;
-}
-
-.plot-text {
-    font-size: 13px;
-    color: #bbb;
-    line-height: 1.5;
-}
-
-@media (max-width: 600px) {
-    .about-container {
-        flex-direction: column;
-        align-items: center;
-    }
-    .modal-poster {
-        width: 140px;
-        height: 200px;
-    }
-}
-
-/* Playlist Section Header Layout */
 .playlist-section-header {
     grid-column: 1 / -1;
     margin-top: 25px;
@@ -520,7 +245,111 @@ button {
     font-weight: normal;
 }
 
-/* OTT Platform Badges Styling */
+.movie-card {
+    background: #1f1f1f;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid #2b2b2b;
+    transition: transform 0.2s;
+}
+
+.movie-card:hover {
+    transform: translateY(-4px);
+}
+
+.movie-card.watched {
+    opacity: 0.55;
+}
+
+.poster-wrapper {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    background: #000;
+}
+
+.poster-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.imdb-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #f5c518;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.card-content {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+    gap: 10px;
+}
+
+.movie-title {
+    font-size: 16px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.release-date {
+    font-size: 12px;
+    color: #8c8c8c;
+}
+
+.playlist-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #aaa;
+}
+
+.playlist-selector select {
+    padding: 4px;
+    font-size: 12px;
+}
+
+.card-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.checkbox-label {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.action-buttons button {
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+/* OTT Badges */
 .ott-container {
     margin-top: 8px;
     font-size: 11px;
@@ -550,4 +379,73 @@ button {
     font-size: 10px;
     padding: 2px 6px;
     border-radius: 3px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #1f1f1f;
+    padding: 25px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.modal-large {
+    max-width: 600px;
+}
+
+.modal-body {
+    display: flex;
+    gap: 20px;
+}
+
+.modal-body img {
+    width: 160px;
+    height: 240px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.modal-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-meta {
+    font-size: 13px;
+    color: #aaa;
+}
+
+.modal-rating {
+    color: #f5c518;
+    font-weight: bold;
+}
+
+.modal-plot {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #ddd;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
 }
