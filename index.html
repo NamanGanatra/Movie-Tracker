@@ -7,108 +7,124 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
- <!-- Authentication Screen (Shown when not logged in) -->
-    <div id="authScreen" class="auth-screen">
-        <div class="auth-card">
-            <h2>🔒 Select Profile to Login</h2>
-            
-            <div id="loginFormContainer">
-                <div class="form-group center-group">
-                    <label for="loginUserSelect">Profile Name:</label>
+<!-- Authentication Screen -->
+    <div id="authScreen" class="auth-container">
+        <div class="auth-box">
+            <h1>🎬 Movie Tracker</h1>
+            <p class="subtitle">Select your profile or create a new one to manage your watchlist.</p>
+
+            <div id="noProfilesMsg" class="info-msg" style="display: none;">
+                No profiles found. Please create a new profile to get started.
+            </div>
+
+            <div id="loginFormContainer" class="form-group">
+                <label for="loginUserSelect">Select Profile:</label>
+                <div class="select-row">
                     <select id="loginUserSelect"></select>
+                    <button type="button" class="btn-danger-outline" onclick="deleteSelectedProfile()" title="Delete selected profile">🗑️ Delete</button>
                 </div>
-                <div class="form-group center-group">
-                    <label for="loginPinInput">Enter 4-Digit PIN:</label>
-                    <input type="password" id="loginPinInput" maxlength="4" placeholder="****">
-                </div>
+
+                <label for="loginPinInput">Enter 4-Digit PIN:</label>
+                <input type="password" id="loginPinInput" maxlength="4" placeholder="****">
+
                 <button class="btn-primary" onclick="login()">Login</button>
             </div>
 
-            <!-- Message shown when no profiles exist yet -->
-            <p id="noProfilesMsg" style="display: none; color: #94a3b8; margin: 15px 0;">No profiles created yet. Click below to create one!</p>
+            <div class="auth-divider">OR</div>
 
-            <hr class="divider">
-            <button class="btn-secondary" onclick="openModal('registerModal')">Create New Profile</button>
+            <button class="btn-secondary" onclick="openModal('registerModal')">+ Create New Profile</button>
+            <button class="btn-link" onclick="clearAllProfiles()">Reset All Data</button>
         </div>
     </div>
 
-    <!-- Main Dashboard (Shown after logging in) -->
-    <div id="dashboard" class="container" style="display: none;">
-        
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="dashboard-container" style="display: none;">
         <!-- Header Bar -->
-        <div class="user-bar">
-            <div class="user-profile-info">
-                <span id="activeUserLabel">Logged in as: <strong>Guest</strong></span>
+        <header class="main-header">
+            <div class="header-left">
+                <h1 id="welcomeTitle">🎬 Watchlist</h1>
+                <span id="activeUserLabel" class="user-badge"></span>
             </div>
-            <button class="btn-danger" onclick="logout()">Logout</button>
-        </div>
-
-        <!-- Title Section -->
-        <header class="header">
-            <h1 id="welcomeTitle">🎬 Watchlist Tracker</h1>
-            <p>Track movies & TV shows, check ratings, and monitor watch progress.</p>
+            <div class="header-right">
+                <button class="btn-secondary" onclick="createPlaylist()">+ New Playlist</button>
+                <button class="btn-danger" onclick="logout()">Logout</button>
+            </div>
         </header>
 
-        <!-- Search Bar with Type & Year Filters -->
-        <div class="search-bar">
-            <input type="text" id="movieInput" placeholder="Enter title (e.g. The Family Man, Inception)..." onkeydown="handleKeyPress(event)">
-            <input type="number" id="yearInput" placeholder="Year (Opt.)" style="max-width: 110px;">
-            <select id="typeInput" style="max-width: 130px;">
-                <option value="">All Types</option>
-                <option value="movie">Movie</option>
-                <option value="series">TV Series</option>
-            </select>
-            <button onclick="addMovie()">Search & Add</button>
-        </div>
-
         <!-- Progress Tracker Bar -->
-        <div class="stats-card">
-            <div class="stats-info">
-                <span>Watch Progress</span>
-                <span id="progressText">0 / 0 Completed</span>
+        <section class="progress-section">
+            <div class="progress-info">
+                <span>Watchlist Progress</span>
+                <span id="progressText">0 / 0 Completed (0%)</span>
             </div>
-            <div class="progress-bar-container">
-                <div id="progressBar" class="progress-bar"></div>
+            <div class="progress-bar-bg">
+                <div id="progressBar" class="progress-bar-fill"></div>
             </div>
-        </div>
+        </section>
 
-        <!-- Movie Grid -->
-        <div id="movieGrid" class="movie-grid"></div>
+        <!-- Search & Filter Controls -->
+        <section class="controls-section">
+            <div class="search-box">
+                <input type="text" id="movieInput" placeholder="Search Movie or TV Show Title..." onkeypress="handleKeyPress(event)">
+                <input type="number" id="yearInput" placeholder="Year (Optional)" class="short-input">
+                <select id="typeInput">
+                    <option value="">All Types</option>
+                    <option value="movie">Movie</option>
+                    <option value="series">Series</option>
+                </select>
+                <select id="addPlaylistSelect">
+                    <!-- Populated via JavaScript -->
+                </select>
+                <button class="btn-primary" onclick="addMovie()">Add to Watchlist</button>
+            </div>
+
+            <div class="filter-box">
+                <label for="playlistFilterSelect">Filter View:</label>
+                <select id="playlistFilterSelect" onchange="handleFilterChange()">
+                    <option value="All">All Playlists</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Movie Cards Grid -->
+        <main id="movieGrid" class="movie-grid">
+            <!-- Dynamic Movie Cards Render Here -->
+        </main>
     </div>
 
-    <!-- About Modal Popup -->
-    <div id="aboutModal" class="modal">
+    <!-- Registration Modal -->
+    <div id="registerModal" class="modal">
         <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Create Profile</h2>
+            <div class="form-group">
+                <label for="regNameInput">Profile Name:</label>
+                <input type="text" id="regNameInput" placeholder="Enter profile name">
+
+                <label for="regPinInput">4-Digit Security PIN:</label>
+                <input type="password" id="regPinInput" maxlength="4" placeholder="****">
+
+                <button class="btn-primary" onclick="registerUser()">Create Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Movie Details Modal (About) -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content modal-large">
             <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
-            <div class="modal-body">
-                <img id="modalPoster" src="" alt="Poster">
-                <div class="modal-details">
-                    <h2 id="modalTitle"></h2>
-                    <div class="modal-meta">
-                        <span id="modalYear"></span>
-                        <span id="modalGenre"></span>
-                        <span id="modalRating" class="badge"></span>
+            <div class="about-container">
+                <img id="modalPoster" src="" alt="Movie Poster" class="modal-poster">
+                <div class="about-details">
+                    <h2 id="modalTitle">Title</h2>
+                    <div class="meta-tags">
+                        <span id="modalRating" class="badge-rating">⭐ N/A</span>
+                        <span id="modalYear" class="badge-info">Year</span>
+                        <span id="modalGenre" class="badge-info">Genre</span>
                     </div>
-                    <p id="modalPlot"></p>
+                    <p id="modalPlot" class="plot-text">Plot details...</p>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Register Profile Modal -->
-    <div id="registerModal" class="modal">
-        <div class="modal-content form-modal">
-            <span class="close-btn" onclick="closeModal('registerModal')">&times;</span>
-            <h2>Create New Profile</h2>
-            <div class="form-group center-group">
-                <label for="regNameInput">Profile Name:</label>
-                <input type="text" id="regNameInput" placeholder="YOUR NAME">
-            </div>
-            <div class="form-group center-group">
-                <label for="regPinInput">4-Digit PIN:</label>
-                <input type="password" id="regPinInput" maxlength="4" placeholder="Set 4-Digit PIN">
-            </div>
-            <button class="btn-primary" onclick="registerUser()">Create Profile</button>
         </div>
     </div>
     <script src="script.js"></script>
