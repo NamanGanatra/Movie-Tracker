@@ -497,3 +497,57 @@ button {
         height: 200px;
     }
 }
+
+/* Playlist Section Header Layout */
+.playlist-section-header {
+    grid-column: 1 / -1;
+    margin-top: 25px;
+    border-bottom: 2px solid #e50914;
+    padding-bottom: 8px;
+}
+
+.playlist-section-header h2 {
+    font-size: 20px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.playlist-count {
+    font-size: 13px;
+    color: #8c8c8c;
+    font-weight: normal;
+}
+
+/* OTT Platform Badges Styling */
+.ott-container {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #aaa;
+}
+
+.ott-badges-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.ott-badge {
+    background: #e50914;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: capitalize;
+}
+
+.ott-badge-none {
+    background: #2a2a2a;
+    color: #777777;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
