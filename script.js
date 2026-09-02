@@ -60,16 +60,29 @@ function populateLoginDropdown() {
     const loginFormContainer = document.getElementById("loginFormContainer");
     const noProfilesMsg = document.getElementById("noProfilesMsg");
 
+    if (!select) return;
+
+    // Clear existing dropdown options completely
     select.innerHTML = "";
+
     const usernameList = Object.keys(users);
 
     if (usernameList.length === 0) {
-        loginFormContainer.style.display = "none";
-        noProfilesMsg.style.display = "block";
+        if (loginFormContainer) loginFormContainer.style.display = "none";
+        if (noProfilesMsg) noProfilesMsg.style.display = "block";
     } else {
-        loginFormContainer.style.display = "flex";
-        noProfilesMsg.style.display = "none";
+        if (loginFormContainer) loginFormContainer.style.display = "flex";
+        if (noProfilesMsg) noProfilesMsg.style.display = "none";
 
+        // Add a default placeholder option
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "-- Select Profile --";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        select.appendChild(defaultOption);
+
+        // Populate all cloud users
         usernameList.forEach(username => {
             const option = document.createElement("option");
             option.value = username;
