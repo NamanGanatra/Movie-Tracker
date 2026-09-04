@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOVIE TRACKER</title>.
+    <title>MOVIE TRACKER</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
-<!-- Auth Screen -->
+    <!-- Auth Screen -->
     <div id="authScreen" class="auth-container">
         <div class="auth-card">
             <h2>🍿 Welcome Back</h2>
@@ -42,11 +42,7 @@
         <header class="top-nav">
             <div class="user-info">
                 <span id="activeUserLabel">User: </span>
-                <div class="user-info">
-    <span id="activeUserLabel">User: </span>
-    <button class="btn-secondary" onclick="changePin()">🔑 Change PIN</button>
-    <button class="btn-logout" onclick="logout()">Logout</button>
-</div>
+                <button class="btn-secondary" onclick="changePin()">🔑 Change PIN</button>
                 <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
         </header>
@@ -105,7 +101,7 @@
         </div>
     </div>
 
-    <!-- Movie About Details Modal -->
+    <!-- Movie Details Modal -->
     <div id="aboutModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-body">
@@ -121,6 +117,7 @@
             </div>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
