@@ -72,13 +72,17 @@
                         <option value="movie">Movie</option>
                         <option value="series">Series</option>
                     </select>
-                    <select id="addPlaylistSelect"></select>
+                    <select id="addPlaylistSelect">
+                        <option value="Default">Default Playlist</option>
+                    </select>
                     <button class="btn-primary" onclick="addMovie()">Search & Add</button>
                 </div>
 
                 <div class="filter-box">
                     <label>Filter View:</label>
-                    <select id="playlistFilterSelect" onchange="handleFilterChange()"></select>
+                    <select id="playlistFilterSelect" onchange="handleFilterChange()">
+                        <option value="All">All Playlists</option>
+                    </select>
                     <button class="btn-secondary" onclick="createPlaylist()">+ New Playlist</button>
                 </div>
             </div>
@@ -101,7 +105,7 @@
         </div>
     </div>
 
-    <!-- Custom Center Modal (Custom UI Prompt Replacement) -->
+    <!-- Custom Center Modal -->
     <div id="customModal" class="modal">
         <div class="modal-content glass-card glowing-modal">
             <h3 id="customModalTitle">PIN Security</h3>
