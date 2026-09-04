@@ -460,3 +460,18 @@ button {
     margin-bottom: 12px;
     display: block;
 }
+
+.btn-secondary {
+    background-color: #3f51b5;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0 5px;
+    font-weight: 500;
+}
+
+.btn-secondary:hover {
+    background-color: #303f9f;
+}
