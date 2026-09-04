@@ -1,6 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, remove, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -14,11 +13,9 @@ const firebaseConfig = {
     measurementId: "G-C13XJBKGHV"
 };
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
+// Initialize Firebase App & Database Instance
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getDatabase(app);
 
 // App State
 let users = {};
@@ -75,7 +72,8 @@ function closeCustomModal(confirmed) {
 
 // Load All Profiles Real-time from Firebase
 function loadUsersFromStorage() {
-    db.ref("users").on("value", (snapshot) => {
+    const usersRef = ref(db, "users");
+    onValue(usersRef, (snapshot) => {
         users = snapshot.val() || {};
         populateLoginDropdown();
     });
@@ -159,7 +157,7 @@ async function registerUser() {
         return;
     }
 
-    db.ref("users/" + name).set({ pin: String(pin) })
+    set(ref(db, "users/" + name), { pin: String(pin) })
         .then(async () => {
             closeModal("registerModal");
             nameInput.value = "";
@@ -203,7 +201,7 @@ async function openChangePinModal() {
         return;
     }
 
-    db.ref("users/" + activeUser + "/pin").set(String(newPin))
+    set(ref(db, "users/" + activeUser + "/pin"), String(newPin))
         .then(async () => {
             await showCustomDialog({ title: "Updated!", desc: "Your PIN was updated successfully!" });
         })
@@ -232,8 +230,8 @@ async function deleteProfile() {
     if (confirmPin === null) return;
 
     if (String(users[username].pin) === String(confirmPin.trim())) {
-        db.ref("users/" + username).remove();
-        db.ref("watchlists/" + username).remove();
+        remove(ref(db, "users/" + username));
+        remove(ref(db, "watchlists/" + username));
         await showCustomDialog({ title: "Deleted", desc: `Profile "${username}" and its data have been removed.` });
     } else {
         await showCustomDialog({ title: "Error", desc: "Incorrect PIN. Deletion cancelled." });
@@ -251,7 +249,7 @@ async function clearAllProfiles() {
     });
 
     if (masterConfirmation === "RESET") {
-        db.ref().remove()
+        remove(ref(db))
             .then(async () => await showCustomDialog({ title: "Wiped", desc: "All application data has been wiped." }))
             .catch(async (err) => await showCustomDialog({ title: "Error", desc: err.message }));
     }
@@ -261,8 +259,16 @@ async function clearAllProfiles() {
 function loadUserData() {
     if (!activeUser) return;
 
-    db.ref("watchlists/" + activeUser).on("value", (snapshot) => {
-        watchlist = snapshot.val() || [];
+    const watchlistRef = ref(db, "watchlists/" + activeUser);
+    onValue(watchlistRef, (snapshot) => {
+        const data = snapshot.val();
+        if (Array.isArray(data)) {
+            watchlist = data;
+        } else if (data && typeof data === 'object') {
+            watchlist = Object.values(data);
+        } else {
+            watchlist = [];
+        }
         renderWatchlist();
     });
 }
@@ -289,12 +295,12 @@ function renderWatchlist() {
         card.className = `movie-card ${item.watched ? 'watched' : ''}`;
         card.innerHTML = `
             <div class="poster-wrapper">
-                <img src="${item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.Title}">
+                <img src="${item.Poster && item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.Title || 'Movie'}">
                 <span class="imdb-tag">⭐ ${item.imdbRating || 'N/A'}</span>
             </div>
             <div class="card-content">
-                <h3 class="movie-title">${item.Title}</h3>
-                <span class="release-date">${item.Year} | ${item.Type || 'movie'}</span>
+                <h3 class="movie-title">${item.Title || 'Untitled'}</h3>
+                <span class="release-date">${item.Year || ''} | ${item.Type || 'movie'}</span>
                 <div class="card-actions">
                     <label class="checkbox-label">
                         <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${index})"> Watched
@@ -313,7 +319,7 @@ function renderWatchlist() {
 function toggleWatched(index) {
     if (!activeUser) return;
     watchlist[index].watched = !watchlist[index].watched;
-    db.ref("watchlists/" + activeUser).set(watchlist);
+    set(ref(db, "watchlists/" + activeUser), watchlist);
 }
 
 // Update Watch Progress Bar
@@ -331,7 +337,7 @@ function updateProgressBar(watched, total) {
 function removeFromWatchlist(index) {
     if (!activeUser) return;
     watchlist.splice(index, 1);
-    db.ref("watchlists/" + activeUser).set(watchlist);
+    set(ref(db, "watchlists/" + activeUser), watchlist);
 }
 
 // Key Press Helper
@@ -351,7 +357,7 @@ function createPlaylist() {}
 // Logout User
 function logout() {
     if (activeUser) {
-        db.ref("watchlists/" + activeUser).off();
+        off(ref(db, "watchlists/" + activeUser));
     }
     activeUser = null;
     watchlist = [];
@@ -369,3 +375,16 @@ function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = "none";
 }
+
+// Expose HTML inline button functions globally
+window.login = login;
+window.registerUser = registerUser;
+window.openChangePinModal = openChangePinModal;
+window.deleteProfile = deleteProfile;
+window.clearAllProfiles = clearAllProfiles;
+window.toggleWatched = toggleWatched;
+window.removeFromWatchlist = removeFromWatchlist;
+window.handleKeyPress = handleKeyPress;
+window.addMovie = addMovie;
+window.logout = logout;
+window.closeCustomModal = closeCustomModal;
