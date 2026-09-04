@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOVIE TRACKER</title>
     <link rel="stylesheet" href="styles.css?v=3.0">
-
-   
 </head>
 <body>
     <!-- Auth Screen -->
@@ -22,7 +20,7 @@
                 
                 <div class="auth-actions">
                     <button class="btn-primary" onclick="login()">Login</button>
-                    <button class="btn-delete" onclick="handleDeleteProfile()">Delete Profile</button>
+                    <button class="btn-delete" onclick="deleteProfile()">Delete Profile</button>
                 </div>
             </div>
 
@@ -30,7 +28,7 @@
 
             <div class="auth-footer">
                 <button class="btn-secondary" onclick="openModal('registerModal')">+ Create New Profile</button>
-                <button class="btn-danger-link" onclick="handleClearAllProfiles()">Reset All Data</button>
+                <button class="btn-danger-link" onclick="clearAllProfiles()">Reset All Data</button>
             </div>
         </div>
     </div>
@@ -41,7 +39,7 @@
         <header class="top-nav">
             <div class="user-info">
                 <span id="activeUserLabel">User: </span>
-                <button class="btn-secondary" onclick="handleChangePinModal()"> Change PIN</button>
+                <button class="btn-secondary" onclick="openChangePinModal()">Change PIN</button>
                 <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
         </header>
@@ -77,8 +75,7 @@
 
                 <div class="filter-box">
                     <label>Filter View:</label>
-                    <select id="playlistFilterSelect" onchange="handleFilterChange()"></select>
-                    <button class="btn-secondary" onclick="createPlaylist()">+ New Playlist</button>
+                    <select id="playlistFilterSelect"></select>
                 </div>
             </div>
 
@@ -130,8 +127,11 @@
         </div>
     </div>
 
-   <script src="script.js?v=1.1"></script>
+    <!-- Firebase SDKs (MUST BE LOADED FIRST) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <!-- Main JS Application Logic (MUST BE LOADED LAST) -->
+    <script src="script.js?v=1.2"></script>
 </body>
 </html>
