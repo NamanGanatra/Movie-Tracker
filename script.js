@@ -1,6 +1,3 @@
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, remove, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
 // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyBE_9UuuWsiIPlxHLIFI0LegMxAzsrYeH0",
@@ -13,22 +10,24 @@ const firebaseConfig = {
     measurementId: "G-C13XJBKGHV"
 };
 
-// Initialize Firebase App & Database Instance
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getDatabase(app);
+// Initialize Firebase App and Database Instance
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
 
-// App State
+// Application State Management
 let users = {};
 let activeUser = null;
 let watchlist = [];
 let customModalResolver = null;
 
-// DOM Initializer
+// Initialize Event Listener
 document.addEventListener("DOMContentLoaded", () => {
     loadUsersFromStorage();
 });
 
-// Real-time Custom Dialog Promise System (Replaces prompt/alert)
+// Real-time Custom Dialog Promise System
 function showCustomDialog({ title, desc, showInput = false, placeholder = "Enter PIN...", isPassword = true }) {
     return new Promise((resolve) => {
         customModalResolver = resolve;
@@ -70,16 +69,17 @@ function closeCustomModal(confirmed) {
     }
 }
 
-// Load All Profiles Real-time from Firebase
+// Fetch Profiles Real-time from Firebase
 function loadUsersFromStorage() {
-    const usersRef = ref(db, "users");
-    onValue(usersRef, (snapshot) => {
+    db.ref("users").on("value", (snapshot) => {
         users = snapshot.val() || {};
         populateLoginDropdown();
+    }, (error) => {
+        console.error("Firebase Read Error:", error);
     });
 }
 
-// Populate Login Dropdown
+// Populate User Selection Dropdown
 function populateLoginDropdown() {
     const select = document.getElementById("loginUserSelect");
     const loginFormContainer = document.getElementById("loginFormContainer");
@@ -113,7 +113,7 @@ function populateLoginDropdown() {
     }
 }
 
-// Login Function
+// Authenticate User Login
 async function login() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
@@ -139,7 +139,7 @@ async function login() {
     }
 }
 
-// Register New User
+// Register New User Profile
 async function registerUser() {
     const nameInput = document.getElementById("regNameInput");
     const pinInput = document.getElementById("regPinInput");
@@ -157,7 +157,7 @@ async function registerUser() {
         return;
     }
 
-    set(ref(db, "users/" + name), { pin: String(pin) })
+    db.ref("users/" + name).set({ pin: String(pin) })
         .then(async () => {
             closeModal("registerModal");
             nameInput.value = "";
@@ -169,7 +169,7 @@ async function registerUser() {
         });
 }
 
-// Custom Center Modal: Change PIN Functionality
+// Change Profile PIN
 async function openChangePinModal() {
     if (!activeUser) return;
 
@@ -201,7 +201,7 @@ async function openChangePinModal() {
         return;
     }
 
-    set(ref(db, "users/" + activeUser + "/pin"), String(newPin))
+    db.ref("users/" + activeUser + "/pin").set(String(newPin))
         .then(async () => {
             await showCustomDialog({ title: "Updated!", desc: "Your PIN was updated successfully!" });
         })
@@ -210,7 +210,7 @@ async function openChangePinModal() {
         });
 }
 
-// Custom Center Modal: Delete Single Profile
+// Delete Selected Profile
 async function deleteProfile() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
@@ -230,15 +230,15 @@ async function deleteProfile() {
     if (confirmPin === null) return;
 
     if (String(users[username].pin) === String(confirmPin.trim())) {
-        remove(ref(db, "users/" + username));
-        remove(ref(db, "watchlists/" + username));
+        db.ref("users/" + username).remove();
+        db.ref("watchlists/" + username).remove();
         await showCustomDialog({ title: "Deleted", desc: `Profile "${username}" and its data have been removed.` });
     } else {
         await showCustomDialog({ title: "Error", desc: "Incorrect PIN. Deletion cancelled." });
     }
 }
 
-// Reset All Database Data
+// Clear Database Reset
 async function clearAllProfiles() {
     const masterConfirmation = await showCustomDialog({
         title: "⚠️ Danger Zone",
@@ -249,7 +249,7 @@ async function clearAllProfiles() {
     });
 
     if (masterConfirmation === "RESET") {
-        remove(ref(db))
+        db.ref().remove()
             .then(async () => await showCustomDialog({ title: "Wiped", desc: "All application data has been wiped." }))
             .catch(async (err) => await showCustomDialog({ title: "Error", desc: err.message }));
     }
@@ -259,8 +259,7 @@ async function clearAllProfiles() {
 function loadUserData() {
     if (!activeUser) return;
 
-    const watchlistRef = ref(db, "watchlists/" + activeUser);
-    onValue(watchlistRef, (snapshot) => {
+    db.ref("watchlists/" + activeUser).on("value", (snapshot) => {
         const data = snapshot.val();
         if (Array.isArray(data)) {
             watchlist = data;
@@ -273,7 +272,7 @@ function loadUserData() {
     });
 }
 
-// Render Watchlist UI
+// Render Watchlist User Interface
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     if (!grid) return;
@@ -281,7 +280,7 @@ function renderWatchlist() {
     grid.innerHTML = "";
 
     if (watchlist.length === 0) {
-        grid.innerHTML = `<p style="color: var(--text-muted); text-align: center; grid-column: 1/-1;">Your watchlist is empty. Add movies/series above!</p>`;
+        grid.innerHTML = `<p style="color: #aaa; text-align: center; grid-column: 1/-1;">Your watchlist is empty. Add movies/series above!</p>`;
         updateProgressBar(0, 0);
         return;
     }
@@ -315,14 +314,14 @@ function renderWatchlist() {
     updateProgressBar(watchedCount, watchlist.length);
 }
 
-// Toggle Watched Status
+// Toggle Item Watched Status
 function toggleWatched(index) {
     if (!activeUser) return;
     watchlist[index].watched = !watchlist[index].watched;
-    set(ref(db, "watchlists/" + activeUser), watchlist);
+    db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
-// Update Watch Progress Bar
+// Update Watchlist Progress Indicator
 function updateProgressBar(watched, total) {
     const text = document.getElementById("progressText");
     const bar = document.getElementById("progressBar");
@@ -337,10 +336,10 @@ function updateProgressBar(watched, total) {
 function removeFromWatchlist(index) {
     if (!activeUser) return;
     watchlist.splice(index, 1);
-    set(ref(db, "watchlists/" + activeUser), watchlist);
+    db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
-// Key Press Helper
+// Key Press Event Handler
 function handleKeyPress(e) {
     if (e.key === 'Enter') addMovie();
 }
@@ -351,13 +350,10 @@ async function addMovie() {
     await showCustomDialog({ title: "Search Feature", desc: `Searching for "${input.value}"... API integration ready.` });
 }
 
-function handleFilterChange() {}
-function createPlaylist() {}
-
-// Logout User
+// Terminate Active User Session
 function logout() {
     if (activeUser) {
-        off(ref(db, "watchlists/" + activeUser));
+        db.ref("watchlists/" + activeUser).off();
     }
     activeUser = null;
     watchlist = [];
@@ -365,7 +361,7 @@ function logout() {
     document.getElementById("authScreen").style.display = "flex";
 }
 
-// Modal Helpers
+// UI Modal Management
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = "flex";
@@ -375,16 +371,3 @@ function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = "none";
 }
-
-// Expose HTML inline button functions globally
-window.login = login;
-window.registerUser = registerUser;
-window.openChangePinModal = openChangePinModal;
-window.deleteProfile = deleteProfile;
-window.clearAllProfiles = clearAllProfiles;
-window.toggleWatched = toggleWatched;
-window.removeFromWatchlist = removeFromWatchlist;
-window.handleKeyPress = handleKeyPress;
-window.addMovie = addMovie;
-window.logout = logout;
-window.closeCustomModal = closeCustomModal;
