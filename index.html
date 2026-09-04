@@ -14,7 +14,7 @@
     <div id="authScreen" class="auth-container">
         <div class="auth-card">
             <h2>🍿 Welcome Back</h2>
-            <p id="noProfilesMsg" style="display: none; color: #aaa;">No profiles found. Please create one.</p>
+            <p id="noProfilesMsg" style="display: none; color: #94a3b8;">No profiles found. Please create one.</p>
             
             <div id="loginFormContainer" class="form-group">
                 <label for="loginUserSelect">Select Profile</label>
@@ -42,7 +42,7 @@
         <header class="top-nav">
             <div class="user-info">
                 <span id="activeUserLabel">User: </span>
-                <button class="btn-secondary" onclick="changePin()"> Change PIN</button>
+                <button class="btn-secondary" onclick="openChangePinModal()">🔑 Change PIN</button>
                 <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
         </header>
@@ -88,9 +88,9 @@
         </main>
     </div>
 
-    <!-- Create Profile Modal -->
+    <!-- Register Profile Modal -->
     <div id="registerModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content glass-card">
             <h3>Create Profile</h3>
             <input type="text" id="regNameInput" placeholder="Profile Name">
             <input type="password" id="regPinInput" placeholder="4-Digit PIN" maxlength="4">
@@ -101,9 +101,22 @@
         </div>
     </div>
 
+    <!-- Custom Prompt/Alert Center Modal (Replaces Browser Prompts) -->
+    <div id="customModal" class="modal">
+        <div class="modal-content glass-card glowing-modal">
+            <h3 id="customModalTitle">Prompt Title</h3>
+            <p id="customModalDesc" class="modal-desc"></p>
+            <input type="password" id="customModalInput" placeholder="Enter value..." style="display: none;">
+            <div class="modal-actions">
+                <button id="customModalCancelBtn" class="btn-secondary" onclick="closeCustomModal(false)">Cancel</button>
+                <button id="customModalConfirmBtn" class="btn-primary" onclick="closeCustomModal(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Movie Details Modal -->
     <div id="aboutModal" class="modal">
-        <div class="modal-content modal-large">
+        <div class="modal-content modal-large glass-card">
             <div class="modal-body">
                 <img id="modalPoster" src="" alt="Poster">
                 <div class="modal-info">
