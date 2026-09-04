@@ -1,225 +1,251 @@
-/* ULTRA CYBERPUNK / TECHNO NEON THEME */
+/* CLEAN STUDIO DARK THEME & FIXED LAYOUT */
 :root {
-    --bg-dark: #030712;
-    --card-bg: rgba(13, 18, 36, 0.75);
-    --card-border: #00f0ff;
-    --neon-cyan: #00f0ff;
-    --neon-pink: #ff007f;
-    --neon-purple: #8b5cf6;
-    --neon-glow: 0 0 15px rgba(0, 240, 255, 0.4);
+    --bg-main: #0b0f17;
+    --card-bg: #151d2a;
+    --card-hover: #1c2638;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-focus: #6366f1;
+    
+    --accent-primary: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-danger: #ef4444;
+    --accent-warning: #f59e0b;
+    
     --text-main: #ffffff;
-    --text-muted: #94a3b8;
-    --danger-red: #ff2a5f;
-    --success-green: #00ff66;
+    --text-sub: #94a3b8;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-    background: radial-gradient(circle at 50% 0%, #1e0b36 0%, #030712 80%);
-    background-attachment: fixed;
+    background-color: var(--bg-main);
     color: var(--text-main);
     min-height: 100vh;
 }
 
-/* Background Techno Grid Line Accent */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.auth-container, .top-nav, .container, .modal {
-    position: relative;
-    z-index: 1;
-}
-
-/* Header Nav */
+/* Header */
 .top-nav {
-    background: rgba(3, 7, 18, 0.85);
-    backdrop-filter: blur(12px);
+    background: #111827;
     padding: 16px 32px;
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    border-bottom: 1px solid rgba(0, 240, 255, 0.3);
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .user-info {
     display: flex;
     align-items: center;
-    gap: 15px;
-    font-weight: 700;
+    gap: 12px;
+    font-weight: 600;
 }
 
 #activeUserLabel {
-    color: var(--neon-cyan);
-    text-shadow: 0 0 8px var(--neon-cyan);
+    color: var(--accent-primary);
 }
 
 .container {
-    max-width: 1100px;
+    max-width: 1000px;
     margin: 30px auto;
     padding: 0 20px;
 }
 
 h1 {
-    font-size: 2.5rem;
-    font-weight: 900;
-    background: linear-gradient(90deg, #00f0ff 0%, #a855f7 50%, #ff007f 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.4));
-    letter-spacing: 0.5px;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--text-main);
 }
 
 .subtitle {
-    color: var(--text-muted);
-    margin-top: 5px;
-    margin-bottom: 25px;
+    color: var(--text-sub);
+    margin-top: 6px;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
 }
 
-/* Glassmorphism Containers */
+/* Base Card Style */
 .progress-section, .controls-card, .auth-card {
     background: var(--card-bg);
-    backdrop-filter: blur(16px);
     padding: 24px;
-    border-radius: 14px;
-    margin-bottom: 25px;
-    border: 1px solid rgba(0, 240, 255, 0.25);
-    box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.05), 0 10px 30px rgba(0, 0, 0, 0.7);
-    transition: border-color 0.3s ease;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
 }
 
-.controls-card:hover, .progress-section:hover {
-    border-color: rgba(0, 240, 255, 0.5);
-    box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.08), 0 10px 30px rgba(0, 240, 255, 0.15);
+/* FIX 1: Search & Controls Layout (Horizontal Row Layout) */
+.controls-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-/* Inputs & Selects */
-input, select {
-    width: 100%;
-    padding: 12px 16px;
+/* Input Row Layout */
+.controls-card > div:first-child,
+.search-bar-container,
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Input Specific Widths */
+input[type="text"], 
+input[type="number"], 
+input[type="password"],
+select {
+    padding: 12px 14px;
     border-radius: 8px;
-    border: 1px solid rgba(0, 240, 255, 0.3);
-    background: rgba(3, 7, 18, 0.9);
+    border: 1px solid var(--border-color);
+    background: #0d121d;
     color: var(--text-main);
     outline: none;
-    font-size: 0.95rem;
-    transition: all 0.25s ease;
+    font-size: 0.92rem;
+    transition: border-color 0.2s ease;
+}
+
+/* Flex grow for main search input */
+input[placeholder*="Title"], 
+input[type="text"]:not([placeholder*="PIN"]) {
+    flex: 2;
+    min-width: 200px;
+}
+
+/* Small inputs */
+input[placeholder*="Year"], select {
+    flex: 1;
+    min-width: 130px;
 }
 
 input:focus, select:focus {
-    border-color: var(--neon-cyan);
-    box-shadow: 0 0 12px var(--neon-cyan);
+    border-color: var(--border-focus);
 }
 
 /* Progress Bar */
 .progress-info {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 12px;
-    font-size: 0.9rem;
-    color: var(--neon-cyan);
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+    color: var(--text-sub);
     font-weight: 600;
 }
 
 .progress-bar-bg {
     width: 100%;
-    height: 12px;
-    background: rgba(3, 7, 18, 0.9);
-    border-radius: 6px;
+    height: 8px;
+    background: #0d121d;
+    border-radius: 4px;
     overflow: hidden;
-    border: 1px solid rgba(0, 240, 255, 0.2);
 }
 
 .progress-bar-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #00f0ff, #8b5cf6, #ff007f);
-    box-shadow: 0 0 15px var(--neon-cyan);
-    border-radius: 6px;
+    background: var(--accent-primary);
+    border-radius: 4px;
     transition: width 0.4s ease;
 }
 
 /* Buttons */
 button {
-    padding: 11px 20px;
+    padding: 12px 20px;
     border-radius: 8px;
     border: none;
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.88rem;
-    letter-spacing: 0.5px;
-    transition: all 0.25s ease;
-    text-transform: uppercase;
+    white-space: nowrap;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+button:active {
+    transform: scale(0.98);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #00f0ff 0%, #7000ff 100%);
-    color: #000;
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    background: var(--accent-primary);
+    color: #ffffff;
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
-    color: #fff;
+    background: var(--accent-hover);
 }
 
 .btn-secondary {
-    background: rgba(112, 0, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-main);
-    border: 1px solid var(--neon-purple);
+    border: 1px solid var(--border-color);
 }
 
 .btn-secondary:hover {
-    background: rgba(112, 0, 255, 0.4);
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .btn-delete {
-    background: rgba(255, 42, 95, 0.15);
-    color: var(--danger-red);
-    border: 1px solid var(--danger-red);
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--accent-danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .btn-delete:hover {
-    background: var(--danger-red);
-    color: white;
-    box-shadow: 0 0 15px rgba(255, 42, 95, 0.6);
+    background: var(--accent-danger);
+    color: #ffffff;
 }
 
 .btn-logout {
-    background: rgba(255, 170, 0, 0.15);
-    color: #ffaa00;
-    border: 1px solid #ffaa00;
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--accent-warning);
+    border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .btn-logout:hover {
-    background: #ffaa00;
-    color: #000;
-    box-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
+    background: var(--accent-warning);
+    color: #000000;
 }
 
-/* Dynamic Movie Cards Grid */
+/* FIX 2: Auth / Login Card Alignment */
+.auth-card {
+    max-width: 450px;
+    margin: 60px auto;
+}
+
+.auth-card h2 {
+    margin-bottom: 16px;
+}
+
+.auth-card .form-group,
+.auth-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+.auth-card input, 
+.auth-card select {
+    width: 100%;
+}
+
+.auth-card .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.auth-card .button-group button {
+    flex: 1;
+}
+
+/* Movie Cards Grid */
 .movie-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
 }
 
@@ -227,19 +253,18 @@ button {
     background: var(--card-bg);
     border-radius: 12px;
     overflow: hidden;
-    border: 1px solid rgba(0, 240, 255, 0.25);
+    border: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease;
 }
 
 .movie-card:hover {
-    transform: translateY(-8px);
-    border-color: var(--neon-cyan);
-    box-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
+    transform: translateY(-4px);
+    background: var(--card-hover);
 }
 
-/* Modals */
+/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -247,24 +272,19 @@ button {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(3, 7, 18, 0.85);
-    backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.7);
     justify-content: center;
     align-items: center;
     z-index: 2000;
 }
 
-.glass-card {
-    background: rgba(13, 18, 36, 0.95);
-    border: 1px solid var(--neon-cyan);
-    box-shadow: 0 0 35px rgba(0, 240, 255, 0.3);
-}
-
 .modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     padding: 28px;
-    border-radius: 16px;
+    border-radius: 12px;
     width: 90%;
-    max-width: 420px;
+    max-width: 400px;
     display: flex;
     flex-direction: column;
     gap: 16px;
