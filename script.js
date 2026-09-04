@@ -16,7 +16,7 @@ if (!firebase.apps.length) {
 }
 const db = firebase.database();
 
-// API Keys (Replace with your actual keys if needed)
+// API Keys
 const OMDB_API_KEY = "f8a4d404";
 const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y";
 
@@ -72,7 +72,7 @@ function populateLoginDropdown() {
     }
 }
 
-// Login Function (Supports both String and Number PIN types)
+// Login Function
 function login() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
@@ -83,7 +83,6 @@ function login() {
         return;
     }
 
-    // String conversion handles both number and string types in Firebase
     if (users[username] && String(users[username].pin) === String(pinInput)) {
         activeUser = username;
         document.getElementById("authScreen").style.display = "none";
@@ -144,7 +143,7 @@ function changePin() {
     }
 
     const currentPinInput = prompt("Enter your current 4-Digit PIN:");
-    if (currentPinInput === null) return; // User cancelled
+    if (currentPinInput === null) return;
 
     if (String(users[activeUser].pin) !== String(currentPinInput.trim())) {
         alert("Current PIN is incorrect!");
@@ -160,7 +159,6 @@ function changePin() {
         return;
     }
 
-    // Update PIN in Firebase Database
     db.ref("users/" + activeUser + "/pin").set(String(newPin))
         .then(() => {
             alert("PIN updated successfully!");
@@ -171,7 +169,7 @@ function changePin() {
         });
 }
 
-// Delete Profile
+// Delete Single Profile
 function deleteProfile() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
@@ -186,13 +184,22 @@ function deleteProfile() {
 
     if (String(users[username].pin) === String(confirmPin.trim())) {
         if (confirm(`Are you sure you want to delete profile "${username}" and all its watchlist data?`)) {
-            // Remove user and user watchlist from cloud
             db.ref("users/" + username).remove();
             db.ref("watchlists/" + username).remove();
             alert(`Profile "${username}" deleted.`);
         }
     } else {
         alert("Incorrect PIN. Deletion cancelled.");
+    }
+}
+
+// Reset All Database Data
+function clearAllProfiles() {
+    const masterConfirmation = prompt("Type 'RESET' to delete all profiles and watchlists permanently:");
+    if (masterConfirmation === "RESET") {
+        db.ref().remove()
+            .then(() => alert("All application data has been wiped."))
+            .catch((err) => alert("Failed to reset: " + err.message));
     }
 }
 
@@ -208,29 +215,64 @@ function loadUserData() {
 
 // Render Watchlist Grid UI
 function renderWatchlist() {
-    const grid = document.getElementById("watchlistGrid");
+    const grid = document.getElementById("movieGrid");
     if (!grid) return;
 
     grid.innerHTML = "";
 
     if (watchlist.length === 0) {
         grid.innerHTML = `<p style="color: #bbb; text-align: center; grid-column: 1/-1;">Your watchlist is empty. Search and add movies/series above!</p>`;
+        updateProgressBar(0, 0);
         return;
     }
 
+    let watchedCount = 0;
+
     watchlist.forEach((item, index) => {
+        if (item.watched) watchedCount++;
+
         const card = document.createElement("div");
-        card.className = "movie-card";
+        card.className = `movie-card ${item.watched ? 'watched' : ''}`;
         card.innerHTML = `
-            <img src="${item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.Title}">
-            <div class="card-info">
-                <h3>${item.Title} (${item.Year})</h3>
-                <p>⭐ ${item.imdbRating || 'N/A'} | ${item.Type || 'movie'}</p>
-                <button onclick="removeFromWatchlist(${index})" class="delete-btn">Remove</button>
+            <div class="poster-wrapper">
+                <img src="${item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.Title}">
+                <span class="imdb-tag">⭐ ${item.imdbRating || 'N/A'}</span>
+            </div>
+            <div class="card-content">
+                <h3 class="movie-title">${item.Title}</h3>
+                <span class="release-date">${item.Year} | ${item.Type || 'movie'}</span>
+                <div class="card-actions">
+                    <label class="checkbox-label">
+                        <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${index})"> Watched
+                    </label>
+                    <div class="action-buttons">
+                        <button class="btn-delete" onclick="removeFromWatchlist(${index})">Remove</button>
+                    </div>
+                </div>
             </div>
         `;
         grid.appendChild(card);
     });
+
+    updateProgressBar(watchedCount, watchlist.length);
+}
+
+// Toggle Watched Status
+function toggleWatched(index) {
+    if (!activeUser) return;
+    watchlist[index].watched = !watchlist[index].watched;
+    db.ref("watchlists/" + activeUser).set(watchlist);
+}
+
+// Update Watch Progress Bar
+function updateProgressBar(watched, total) {
+    const text = document.getElementById("progressText");
+    const bar = document.getElementById("progressBar");
+    if (!text || !bar) return;
+
+    const percentage = total > 0 ? Math.round((watched / total) * 100) : 0;
+    text.innerText = `${watched} / ${total} Completed (${percentage}%)`;
+    bar.style.width = `${percentage}%`;
 }
 
 // Remove Item from Watchlist
@@ -240,6 +282,21 @@ function removeFromWatchlist(index) {
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
+// Key Press Helper
+function handleKeyPress(e) {
+    if (e.key === 'Enter') addMovie();
+}
+
+// Placeholder for Search & Add Integration
+function addMovie() {
+    const input = document.getElementById("movieInput");
+    if (!input || !input.value.trim()) return;
+    alert(`Searching for ${input.value}... Connect OMDB API handler if separate.`);
+}
+
+function handleFilterChange() {}
+function createPlaylist() {}
+
 // Logout User
 function logout() {
     if (activeUser) {
@@ -248,10 +305,10 @@ function logout() {
     activeUser = null;
     watchlist = [];
     document.getElementById("dashboard").style.display = "none";
-    document.getElementById("authScreen").style.display = "block";
+    document.getElementById("authScreen").style.display = "flex";
 }
 
-// Modal Toggle Helpers
+// Modal Helpers
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = "flex";
