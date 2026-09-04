@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOVIE TRACKER</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=3.0">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -14,7 +14,7 @@
     <div id="authScreen" class="auth-container">
         <div class="auth-card">
             <h2>🍿 Welcome Back</h2>
-            <p id="noProfilesMsg" style="display: none; color: #94a3b8;">No profiles found. Please create one.</p>
+            <p id="noProfilesMsg" style="display: none; color: #64748b;">No profiles found. Please create one.</p>
             
             <div id="loginFormContainer" class="form-group">
                 <label for="loginUserSelect">Select Profile</label>
@@ -23,7 +23,7 @@
                 
                 <div class="auth-actions">
                     <button class="btn-primary" onclick="login()">Login</button>
-                    <button class="btn-delete" onclick="deleteProfile()">Delete Profile</button>
+                    <button class="btn-delete" onclick="handleDeleteProfile()">Delete Profile</button>
                 </div>
             </div>
 
@@ -31,7 +31,7 @@
 
             <div class="auth-footer">
                 <button class="btn-secondary" onclick="openModal('registerModal')">+ Create New Profile</button>
-                <button class="btn-danger-link" onclick="clearAllProfiles()">Reset All Data</button>
+                <button class="btn-danger-link" onclick="handleClearAllProfiles()">Reset All Data</button>
             </div>
         </div>
     </div>
@@ -42,7 +42,7 @@
         <header class="top-nav">
             <div class="user-info">
                 <span id="activeUserLabel">User: </span>
-                <button class="btn-secondary" onclick="openChangePinModal()">🔑 Change PIN</button>
+                <button class="btn-secondary" onclick="handleChangePinModal()">🔑 Change PIN</button>
                 <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
         </header>
@@ -101,12 +101,12 @@
         </div>
     </div>
 
-    <!-- Custom Prompt/Alert Center Modal (Replaces Browser Prompts) -->
+    <!-- Custom Center Modal (Custom UI Prompt Replacement) -->
     <div id="customModal" class="modal">
         <div class="modal-content glass-card glowing-modal">
-            <h3 id="customModalTitle">Prompt Title</h3>
+            <h3 id="customModalTitle">PIN Security</h3>
             <p id="customModalDesc" class="modal-desc"></p>
-            <input type="password" id="customModalInput" placeholder="Enter value..." style="display: none;">
+            <input type="password" id="customModalInput" placeholder="Enter PIN..." maxlength="20">
             <div class="modal-actions">
                 <button id="customModalCancelBtn" class="btn-secondary" onclick="closeCustomModal(false)">Cancel</button>
                 <button id="customModalConfirmBtn" class="btn-primary" onclick="closeCustomModal(true)">Confirm</button>
@@ -131,6 +131,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=3.0"></script>
 </body>
 </html>
