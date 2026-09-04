@@ -1,26 +1,29 @@
-/* Color Variables & Base Reset */
+/* Futuristic Cyberpunk / Techno Neon Theme */
 :root {
-    --bg-dark: #090d16;
-    --card-bg: rgba(22, 30, 46, 0.75);
-    --border-color: rgba(255, 255, 255, 0.08);
-    --primary-neon: #38bdf8;
-    --primary-hover: #0284c7;
-    --accent-purple: #818cf8;
-    --text-main: #f1f5f9;
-    --text-muted: #94a3b8;
-    --danger-red: #f43f5e;
-    --success-green: #10b981;
+    --bg-dark: #050811;
+    --card-bg: rgba(10, 16, 30, 0.85);
+    --border-color: rgba(0, 240, 255, 0.2);
+    --border-hover: #00f0ff;
+    --primary-neon: #00f0ff;
+    --primary-glow: rgba(0, 240, 255, 0.4);
+    --accent-purple: #7000ff;
+    --purple-glow: rgba(112, 0, 255, 0.5);
+    --accent-pink: #ff007f;
+    --text-main: #f8fafc;
+    --text-muted: #64748b;
+    --danger-red: #ff2a5f;
+    --success-green: #00ff66;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 body {
-    background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, var(--bg-dark) 70%);
+    background: radial-gradient(circle at 50% 0%, #100a26 0%, #050811 75%);
     color: var(--text-main);
     min-height: 100vh;
 }
@@ -38,33 +41,35 @@ body {
     background: var(--card-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    padding: 32px;
+    padding: 36px;
     border-radius: 16px;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     border: 1px solid var(--border-color);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.15), 0 20px 50px rgba(0, 0, 0, 0.8);
     text-align: center;
 }
 
 .auth-card h2 {
-    font-size: 1.8rem;
-    color: var(--text-main);
-    letter-spacing: -0.5px;
+    font-size: 2rem;
+    color: var(--primary-neon);
+    text-shadow: 0 0 10px var(--primary-glow);
+    letter-spacing: 1px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 24px;
     text-align: left;
 }
 
 .form-group label {
     font-size: 0.85rem;
     color: var(--text-muted);
-    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 input, select {
@@ -72,16 +77,16 @@ input, select {
     padding: 12px 16px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(5, 11, 24, 0.8);
     color: var(--text-main);
     outline: none;
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input:focus, select:focus {
     border-color: var(--primary-neon);
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    box-shadow: 0 0 15px var(--primary-glow);
 }
 
 .auth-actions {
@@ -91,27 +96,28 @@ input:focus, select:focus {
 }
 
 .divider {
-    margin: 20px 0;
+    margin: 24px 0;
     border: 0;
     height: 1px;
-    background: var(--border-color);
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
 }
 
 .auth-footer {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
-/* Dashboard Navigation */
+/* Nav & Header */
 .top-nav {
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(5, 8, 17, 0.9);
     backdrop-filter: blur(12px);
     padding: 16px 32px;
     display: flex;
     justify-content: flex-end;
     align-items: center;
     border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .user-info {
@@ -121,10 +127,23 @@ input:focus, select:focus {
     font-weight: 600;
 }
 
+#activeUserLabel {
+    color: var(--primary-neon);
+    text-shadow: 0 0 8px var(--primary-glow);
+}
+
 .container {
     max-width: 1100px;
     margin: 30px auto;
     padding: 0 20px;
+}
+
+h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(90deg, var(--primary-neon), #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
 }
 
 .subtitle {
@@ -136,10 +155,11 @@ input:focus, select:focus {
 /* Progress Bar */
 .progress-section {
     background: var(--card-bg);
-    padding: 18px;
+    padding: 20px;
     border-radius: 12px;
     margin-bottom: 25px;
     border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .progress-info {
@@ -153,20 +173,22 @@ input:focus, select:focus {
 .progress-bar-bg {
     width: 100%;
     height: 10px;
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(5, 11, 24, 0.9);
     border-radius: 5px;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .progress-bar-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #38bdf8, #818cf8);
+    background: linear-gradient(90deg, var(--primary-neon), var(--accent-purple), var(--accent-pink));
+    box-shadow: 0 0 12px var(--primary-glow);
     border-radius: 5px;
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.4s ease;
 }
 
-/* Control Cards */
+/* Controls */
 .controls-card {
     background: var(--card-bg);
     padding: 20px;
@@ -188,54 +210,64 @@ input:focus, select:focus {
 .search-box input[type="text"] { flex: 2; min-width: 200px; }
 .search-box input[type="number"], .search-box select { flex: 1; min-width: 120px; }
 
-/* Buttons */
+/* Techno Buttons */
 button {
-    padding: 10px 18px;
+    padding: 11px 20px;
     border-radius: 8px;
     border: none;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: 0.5px;
+    transition: all 0.25s ease;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+    background: linear-gradient(135deg, #00f0ff 0%, #7000ff 100%);
+    color: #000;
+    font-weight: 800;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
 }
 
 .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(56, 189, 248, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+    color: #fff;
 }
 
 .btn-secondary {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(112, 0, 255, 0.15);
     color: var(--text-main);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--accent-purple);
 }
 
 .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(112, 0, 255, 0.35);
+    box-shadow: 0 0 15px var(--purple-glow);
 }
 
 .btn-delete {
-    background: var(--danger-red);
-    color: white;
+    background: rgba(255, 42, 95, 0.15);
+    color: var(--danger-red);
+    border: 1px solid var(--danger-red);
 }
 
 .btn-delete:hover {
-    background: #e11d48;
+    background: var(--danger-red);
+    color: white;
+    box-shadow: 0 0 15px rgba(255, 42, 95, 0.5);
 }
 
 .btn-logout {
-    background: #f59e0b;
-    color: white;
+    background: rgba(255, 170, 0, 0.15);
+    color: #ffaa00;
+    border: 1px solid #ffaa00;
 }
 
 .btn-logout:hover {
-    background: #d97706;
+    background: #ffaa00;
+    color: #000;
+    box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
 }
 
 .btn-danger-link {
@@ -259,13 +291,13 @@ button {
     border: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .movie-card:hover {
-    transform: translateY(-6px);
-    border-color: rgba(56, 189, 248, 0.4);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--primary-neon);
+    box-shadow: 0 10px 30px rgba(0, 240, 255, 0.25);
 }
 
 .movie-card.watched {
@@ -289,13 +321,14 @@ button {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: rgba(9, 13, 22, 0.85);
-    backdrop-filter: blur(8px);
+    background: rgba(5, 8, 17, 0.9);
+    border: 1px solid #ffaa00;
     padding: 4px 8px;
     border-radius: 6px;
     font-size: 0.8rem;
     font-weight: bold;
-    color: #fbbf24;
+    color: #ffaa00;
+    box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
 }
 
 .card-content {
@@ -335,7 +368,7 @@ button {
     color: var(--text-muted);
 }
 
-/* Custom Modal UI Center Pop-up */
+/* Modals */
 .modal {
     display: none;
     position: fixed;
@@ -343,18 +376,17 @@ button {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(9, 13, 22, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(5, 8, 17, 0.85);
+    backdrop-filter: blur(12px);
     justify-content: center;
     align-items: center;
     z-index: 2000;
 }
 
 .glass-card {
-    background: rgba(22, 30, 46, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    background: rgba(10, 16, 30, 0.95);
+    border: 1px solid var(--primary-neon);
+    box-shadow: 0 0 40px rgba(0, 240, 255, 0.25);
 }
 
 .glowing-modal {
@@ -364,7 +396,7 @@ button {
 @keyframes modalAppear {
     from {
         opacity: 0;
-        transform: scale(0.92) translateY(10px);
+        transform: scale(0.9) translateY(15px);
     }
     to {
         opacity: 1;
@@ -380,6 +412,11 @@ button {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.modal-content h3 {
+    color: var(--primary-neon);
+    text-shadow: 0 0 10px var(--primary-glow);
 }
 
 .modal-desc {
