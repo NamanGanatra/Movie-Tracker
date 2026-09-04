@@ -10,24 +10,23 @@ const firebaseConfig = {
     measurementId: "G-C13XJBKGHV"
 };
 
-// Initialize Firebase App and Database Instance
+// Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.database();
 
-// Application State Management
+// State Variables
 let users = {};
 let activeUser = null;
 let watchlist = [];
 let customModalResolver = null;
 
-// Initialize Event Listener
 document.addEventListener("DOMContentLoaded", () => {
     loadUsersFromStorage();
 });
 
-// Real-time Custom Dialog Promise System
+// Custom Center Dialog Pop-Up System
 function showCustomDialog({ title, desc, showInput = false, placeholder = "Enter PIN...", isPassword = true }) {
     return new Promise((resolve) => {
         customModalResolver = resolve;
@@ -69,17 +68,14 @@ function closeCustomModal(confirmed) {
     }
 }
 
-// Fetch Profiles Real-time from Firebase
+// Load Profiles
 function loadUsersFromStorage() {
     db.ref("users").on("value", (snapshot) => {
         users = snapshot.val() || {};
         populateLoginDropdown();
-    }, (error) => {
-        console.error("Firebase Read Error:", error);
     });
 }
 
-// Populate User Selection Dropdown
 function populateLoginDropdown() {
     const select = document.getElementById("loginUserSelect");
     const loginFormContainer = document.getElementById("loginFormContainer");
@@ -113,7 +109,7 @@ function populateLoginDropdown() {
     }
 }
 
-// Authenticate User Login
+// Login
 async function login() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
@@ -139,7 +135,7 @@ async function login() {
     }
 }
 
-// Register New User Profile
+// Register Profile
 async function registerUser() {
     const nameInput = document.getElementById("regNameInput");
     const pinInput = document.getElementById("regPinInput");
@@ -148,12 +144,12 @@ async function registerUser() {
     const pin = pinInput.value.trim();
 
     if (!name || pin.length !== 4 || isNaN(pin)) {
-        await showCustomDialog({ title: "Invalid Data", desc: "Please enter a valid name and a 4-digit numeric PIN." });
+        await showCustomDialog({ title: "Invalid Input", desc: "Please enter a valid name and 4-digit PIN." });
         return;
     }
 
     if (users[name]) {
-        await showCustomDialog({ title: "Error", desc: "A profile with this name already exists!" });
+        await showCustomDialog({ title: "Error", desc: "Profile already exists!" });
         return;
     }
 
@@ -169,13 +165,13 @@ async function registerUser() {
         });
 }
 
-// Change Profile PIN
-async function openChangePinModal() {
+// New Custom PIN Dialog Handler
+async function handleChangePinModal() {
     if (!activeUser) return;
 
     const currentPin = await showCustomDialog({
-        title: "🔑 Change PIN",
-        desc: "Enter your current 4-Digit PIN to verify identity:",
+        title: "🔑 Verify Current PIN",
+        desc: "Enter your current 4-Digit PIN to continue:",
         showInput: true,
         placeholder: "Current PIN"
     });
@@ -188,10 +184,10 @@ async function openChangePinModal() {
     }
 
     const newPin = await showCustomDialog({
-        title: "🔑 New PIN",
+        title: "🔑 Set New PIN",
         desc: "Enter your NEW 4-Digit PIN:",
         showInput: true,
-        placeholder: "New PIN"
+        placeholder: "New 4-Digit PIN"
     });
 
     if (newPin === null) return;
@@ -203,26 +199,26 @@ async function openChangePinModal() {
 
     db.ref("users/" + activeUser + "/pin").set(String(newPin))
         .then(async () => {
-            await showCustomDialog({ title: "Updated!", desc: "Your PIN was updated successfully!" });
+            await showCustomDialog({ title: "Success", desc: "Your PIN has been updated!" });
         })
         .catch(async (error) => {
             await showCustomDialog({ title: "Error", desc: error.message });
         });
 }
 
-// Delete Selected Profile
-async function deleteProfile() {
+// Delete Single Profile
+async function handleDeleteProfile() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
 
     if (!username) {
-        await showCustomDialog({ title: "Selection Required", desc: "Please select a profile to delete." });
+        await showCustomDialog({ title: "Select Profile", desc: "Please select a profile to delete." });
         return;
     }
 
     const confirmPin = await showCustomDialog({
-        title: "🗑️ Confirm Deletion",
-        desc: `Enter PIN for "${username}" to confirm profile removal:`,
+        title: "🗑️ Delete Profile",
+        desc: `Enter PIN for "${username}" to delete:`,
         showInput: true,
         placeholder: "4-Digit PIN"
     });
@@ -232,47 +228,39 @@ async function deleteProfile() {
     if (String(users[username].pin) === String(confirmPin.trim())) {
         db.ref("users/" + username).remove();
         db.ref("watchlists/" + username).remove();
-        await showCustomDialog({ title: "Deleted", desc: `Profile "${username}" and its data have been removed.` });
+        await showCustomDialog({ title: "Deleted", desc: `Profile "${username}" removed.` });
     } else {
-        await showCustomDialog({ title: "Error", desc: "Incorrect PIN. Deletion cancelled." });
+        await showCustomDialog({ title: "Error", desc: "Incorrect PIN." });
     }
 }
 
-// Clear Database Reset
-async function clearAllProfiles() {
-    const masterConfirmation = await showCustomDialog({
+// Reset Database Data
+async function handleClearAllProfiles() {
+    const confirmation = await showCustomDialog({
         title: "⚠️ Danger Zone",
-        desc: "Type 'RESET' to delete all profiles and watchlists permanently:",
+        desc: "Type 'RESET' to wipe all profiles:",
         showInput: true,
         placeholder: "Type RESET",
         isPassword: false
     });
 
-    if (masterConfirmation === "RESET") {
+    if (confirmation === "RESET") {
         db.ref().remove()
-            .then(async () => await showCustomDialog({ title: "Wiped", desc: "All application data has been wiped." }))
+            .then(async () => await showCustomDialog({ title: "Wiped", desc: "All data cleared successfully." }))
             .catch(async (err) => await showCustomDialog({ title: "Error", desc: err.message }));
     }
 }
 
-// Load Active User Watchlist
+// Watchlist Handling
 function loadUserData() {
     if (!activeUser) return;
 
     db.ref("watchlists/" + activeUser).on("value", (snapshot) => {
-        const data = snapshot.val();
-        if (Array.isArray(data)) {
-            watchlist = data;
-        } else if (data && typeof data === 'object') {
-            watchlist = Object.values(data);
-        } else {
-            watchlist = [];
-        }
+        watchlist = snapshot.val() || [];
         renderWatchlist();
     });
 }
 
-// Render Watchlist User Interface
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     if (!grid) return;
@@ -280,7 +268,7 @@ function renderWatchlist() {
     grid.innerHTML = "";
 
     if (watchlist.length === 0) {
-        grid.innerHTML = `<p style="color: #aaa; text-align: center; grid-column: 1/-1;">Your watchlist is empty. Add movies/series above!</p>`;
+        grid.innerHTML = `<p style="color: var(--text-muted); text-align: center; grid-column: 1/-1;">Your watchlist is empty.</p>`;
         updateProgressBar(0, 0);
         return;
     }
@@ -294,12 +282,12 @@ function renderWatchlist() {
         card.className = `movie-card ${item.watched ? 'watched' : ''}`;
         card.innerHTML = `
             <div class="poster-wrapper">
-                <img src="${item.Poster && item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.Title || 'Movie'}">
+                <img src="${item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.Title}">
                 <span class="imdb-tag">⭐ ${item.imdbRating || 'N/A'}</span>
             </div>
             <div class="card-content">
-                <h3 class="movie-title">${item.Title || 'Untitled'}</h3>
-                <span class="release-date">${item.Year || ''} | ${item.Type || 'movie'}</span>
+                <h3 class="movie-title">${item.Title}</h3>
+                <span class="release-date">${item.Year} | ${item.Type || 'movie'}</span>
                 <div class="card-actions">
                     <label class="checkbox-label">
                         <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${index})"> Watched
@@ -314,14 +302,12 @@ function renderWatchlist() {
     updateProgressBar(watchedCount, watchlist.length);
 }
 
-// Toggle Item Watched Status
 function toggleWatched(index) {
     if (!activeUser) return;
     watchlist[index].watched = !watchlist[index].watched;
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
-// Update Watchlist Progress Indicator
 function updateProgressBar(watched, total) {
     const text = document.getElementById("progressText");
     const bar = document.getElementById("progressBar");
@@ -332,14 +318,12 @@ function updateProgressBar(watched, total) {
     bar.style.width = `${percentage}%`;
 }
 
-// Remove Item from Watchlist
 function removeFromWatchlist(index) {
     if (!activeUser) return;
     watchlist.splice(index, 1);
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
-// Key Press Event Handler
 function handleKeyPress(e) {
     if (e.key === 'Enter') addMovie();
 }
@@ -347,10 +331,12 @@ function handleKeyPress(e) {
 async function addMovie() {
     const input = document.getElementById("movieInput");
     if (!input || !input.value.trim()) return;
-    await showCustomDialog({ title: "Search Feature", desc: `Searching for "${input.value}"... API integration ready.` });
+    await showCustomDialog({ title: "Search Feature", desc: `Searching for "${input.value}"...` });
 }
 
-// Terminate Active User Session
+function handleFilterChange() {}
+function createPlaylist() {}
+
 function logout() {
     if (activeUser) {
         db.ref("watchlists/" + activeUser).off();
@@ -361,7 +347,6 @@ function logout() {
     document.getElementById("authScreen").style.display = "flex";
 }
 
-// UI Modal Management
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = "flex";
