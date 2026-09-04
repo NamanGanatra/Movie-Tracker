@@ -16,19 +16,58 @@ if (!firebase.apps.length) {
 }
 const db = firebase.database();
 
-// API Keys
-const OMDB_API_KEY = "f8a4d404";
-const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y";
-
 // App State
 let users = {};
 let activeUser = null;
 let watchlist = [];
+let customModalResolver = null;
 
 // DOM Initializer
 document.addEventListener("DOMContentLoaded", () => {
     loadUsersFromStorage();
 });
+
+// Real-time Custom Dialog Promise System (Replaces prompt/alert)
+function showCustomDialog({ title, desc, showInput = false, placeholder = "Enter PIN...", isPassword = true }) {
+    return new Promise((resolve) => {
+        customModalResolver = resolve;
+        
+        document.getElementById("customModalTitle").innerText = title;
+        document.getElementById("customModalDesc").innerText = desc || "";
+        
+        const inputField = document.getElementById("customModalInput");
+        const cancelBtn = document.getElementById("customModalCancelBtn");
+
+        if (showInput) {
+            inputField.style.display = "block";
+            inputField.value = "";
+            inputField.placeholder = placeholder;
+            inputField.type = isPassword ? "password" : "text";
+            cancelBtn.style.display = "inline-block";
+            setTimeout(() => inputField.focus(), 100);
+        } else {
+            inputField.style.display = "none";
+            cancelBtn.style.display = "none";
+        }
+
+        openModal("customModal");
+    });
+}
+
+function closeCustomModal(confirmed) {
+    const inputField = document.getElementById("customModalInput");
+    const val = inputField.value.trim();
+    closeModal("customModal");
+
+    if (customModalResolver) {
+        if (!confirmed) {
+            customModalResolver(null);
+        } else {
+            customModalResolver(inputField.style.display !== "none" ? val : true);
+        }
+        customModalResolver = null;
+    }
+}
 
 // Load All Profiles Real-time from Firebase
 function loadUsersFromStorage() {
@@ -38,7 +77,7 @@ function loadUsersFromStorage() {
     });
 }
 
-// Populate Profile Selection Dropdown
+// Populate Login Dropdown
 function populateLoginDropdown() {
     const select = document.getElementById("loginUserSelect");
     const loginFormContainer = document.getElementById("loginFormContainer");
@@ -73,13 +112,13 @@ function populateLoginDropdown() {
 }
 
 // Login Function
-function login() {
+async function login() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
     const pinInput = document.getElementById("loginPinInput").value.trim();
 
     if (!username || !pinInput) {
-        alert("Please select a profile and enter your 4-digit PIN.");
+        await showCustomDialog({ title: "Action Required", desc: "Please select a profile and enter your 4-digit PIN." });
         return;
     }
 
@@ -88,122 +127,133 @@ function login() {
         document.getElementById("authScreen").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
         
-        const activeUserLabel = document.getElementById("activeUserLabel");
-        if (activeUserLabel) activeUserLabel.innerText = `User: ${activeUser}`;
-        
-        const welcomeTitle = document.getElementById("welcomeTitle");
-        if (welcomeTitle) welcomeTitle.innerText = `🎬 ${activeUser}'s Watchlist`;
+        document.getElementById("activeUserLabel").innerText = `User: ${activeUser}`;
+        document.getElementById("welcomeTitle").innerText = `🎬 ${activeUser}'s Watchlist`;
 
         document.getElementById("loginPinInput").value = "";
-        
         loadUserData();
     } else {
-        alert("Incorrect PIN. Please try again.");
+        await showCustomDialog({ title: "Access Denied", desc: "Incorrect PIN. Please try again." });
     }
 }
 
 // Register New User
-function registerUser() {
+async function registerUser() {
     const nameInput = document.getElementById("regNameInput");
     const pinInput = document.getElementById("regPinInput");
-
-    if (!nameInput || !pinInput) return;
 
     const name = nameInput.value.trim();
     const pin = pinInput.value.trim();
 
     if (!name || pin.length !== 4 || isNaN(pin)) {
-        alert("Please enter a valid profile name and a 4-digit PIN.");
+        await showCustomDialog({ title: "Invalid Data", desc: "Please enter a valid name and a 4-digit numeric PIN." });
         return;
     }
 
     if (users[name]) {
-        alert("A profile with this name already exists!");
+        await showCustomDialog({ title: "Error", desc: "A profile with this name already exists!" });
         return;
     }
 
-    db.ref("users/" + name).set({
-        pin: String(pin)
-    }).then(() => {
-        closeModal("registerModal");
-        nameInput.value = "";
-        pinInput.value = "";
-        alert(`Profile "${name}" created successfully!`);
-    }).catch((error) => {
-        console.error("Firebase write error:", error);
-        alert("Firebase error: " + error.message);
-    });
+    db.ref("users/" + name).set({ pin: String(pin) })
+        .then(async () => {
+            closeModal("registerModal");
+            nameInput.value = "";
+            pinInput.value = "";
+            await showCustomDialog({ title: "Success 🎉", desc: `Profile "${name}" created successfully!` });
+        })
+        .catch(async (error) => {
+            await showCustomDialog({ title: "Firebase Error", desc: error.message });
+        });
 }
 
-// Change PIN Functionality
-function changePin() {
-    if (!activeUser) {
-        alert("No active session found. Please login first.");
+// Custom Center Modal: Change PIN Functionality
+async function openChangePinModal() {
+    if (!activeUser) return;
+
+    const currentPin = await showCustomDialog({
+        title: "🔑 Change PIN",
+        desc: "Enter your current 4-Digit PIN to verify identity:",
+        showInput: true,
+        placeholder: "Current PIN"
+    });
+
+    if (currentPin === null) return;
+
+    if (String(users[activeUser].pin) !== String(currentPin.trim())) {
+        await showCustomDialog({ title: "Error", desc: "Current PIN is incorrect!" });
         return;
     }
 
-    const currentPinInput = prompt("Enter your current 4-Digit PIN:");
-    if (currentPinInput === null) return;
+    const newPin = await showCustomDialog({
+        title: "🔑 New PIN",
+        desc: "Enter your NEW 4-Digit PIN:",
+        showInput: true,
+        placeholder: "New PIN"
+    });
 
-    if (String(users[activeUser].pin) !== String(currentPinInput.trim())) {
-        alert("Current PIN is incorrect!");
-        return;
-    }
+    if (newPin === null) return;
 
-    const newPinInput = prompt("Enter your NEW 4-Digit PIN:");
-    if (newPinInput === null) return;
-
-    const newPin = newPinInput.trim();
     if (newPin.length !== 4 || isNaN(newPin)) {
-        alert("PIN must be a 4-digit number!");
+        await showCustomDialog({ title: "Error", desc: "PIN must be a 4-digit number!" });
         return;
     }
 
     db.ref("users/" + activeUser + "/pin").set(String(newPin))
-        .then(() => {
-            alert("PIN updated successfully!");
+        .then(async () => {
+            await showCustomDialog({ title: "Updated!", desc: "Your PIN was updated successfully!" });
         })
-        .catch((error) => {
-            console.error("Error updating PIN:", error);
-            alert("Failed to update PIN: " + error.message);
+        .catch(async (error) => {
+            await showCustomDialog({ title: "Error", desc: error.message });
         });
 }
 
-// Delete Single Profile
-function deleteProfile() {
+// Custom Center Modal: Delete Single Profile
+async function deleteProfile() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
 
     if (!username) {
-        alert("Please select a profile to delete.");
+        await showCustomDialog({ title: "Selection Required", desc: "Please select a profile to delete." });
         return;
     }
 
-    const confirmPin = prompt(`Enter PIN for "${username}" to confirm deletion:`);
-    if (!confirmPin) return;
+    const confirmPin = await showCustomDialog({
+        title: "🗑️ Confirm Deletion",
+        desc: `Enter PIN for "${username}" to confirm profile removal:`,
+        showInput: true,
+        placeholder: "4-Digit PIN"
+    });
+
+    if (confirmPin === null) return;
 
     if (String(users[username].pin) === String(confirmPin.trim())) {
-        if (confirm(`Are you sure you want to delete profile "${username}" and all its watchlist data?`)) {
-            db.ref("users/" + username).remove();
-            db.ref("watchlists/" + username).remove();
-            alert(`Profile "${username}" deleted.`);
-        }
+        db.ref("users/" + username).remove();
+        db.ref("watchlists/" + username).remove();
+        await showCustomDialog({ title: "Deleted", desc: `Profile "${username}" and its data have been removed.` });
     } else {
-        alert("Incorrect PIN. Deletion cancelled.");
+        await showCustomDialog({ title: "Error", desc: "Incorrect PIN. Deletion cancelled." });
     }
 }
 
 // Reset All Database Data
-function clearAllProfiles() {
-    const masterConfirmation = prompt("Type 'RESET' to delete all profiles and watchlists permanently:");
+async function clearAllProfiles() {
+    const masterConfirmation = await showCustomDialog({
+        title: "⚠️ Danger Zone",
+        desc: "Type 'RESET' to delete all profiles and watchlists permanently:",
+        showInput: true,
+        placeholder: "Type RESET",
+        isPassword: false
+    });
+
     if (masterConfirmation === "RESET") {
         db.ref().remove()
-            .then(() => alert("All application data has been wiped."))
-            .catch((err) => alert("Failed to reset: " + err.message));
+            .then(async () => await showCustomDialog({ title: "Wiped", desc: "All application data has been wiped." }))
+            .catch(async (err) => await showCustomDialog({ title: "Error", desc: err.message }));
     }
 }
 
-// Load Active User's Watchlist
+// Load Active User Watchlist
 function loadUserData() {
     if (!activeUser) return;
 
@@ -213,7 +263,7 @@ function loadUserData() {
     });
 }
 
-// Render Watchlist Grid UI
+// Render Watchlist UI
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     if (!grid) return;
@@ -221,7 +271,7 @@ function renderWatchlist() {
     grid.innerHTML = "";
 
     if (watchlist.length === 0) {
-        grid.innerHTML = `<p style="color: #bbb; text-align: center; grid-column: 1/-1;">Your watchlist is empty. Search and add movies/series above!</p>`;
+        grid.innerHTML = `<p style="color: var(--text-muted); text-align: center; grid-column: 1/-1;">Your watchlist is empty. Add movies/series above!</p>`;
         updateProgressBar(0, 0);
         return;
     }
@@ -245,9 +295,7 @@ function renderWatchlist() {
                     <label class="checkbox-label">
                         <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${index})"> Watched
                     </label>
-                    <div class="action-buttons">
-                        <button class="btn-delete" onclick="removeFromWatchlist(${index})">Remove</button>
-                    </div>
+                    <button class="btn-delete" onclick="removeFromWatchlist(${index})">Remove</button>
                 </div>
             </div>
         `;
@@ -287,11 +335,10 @@ function handleKeyPress(e) {
     if (e.key === 'Enter') addMovie();
 }
 
-// Placeholder for Search & Add Integration
-function addMovie() {
+async function addMovie() {
     const input = document.getElementById("movieInput");
     if (!input || !input.value.trim()) return;
-    alert(`Searching for ${input.value}... Connect OMDB API handler if separate.`);
+    await showCustomDialog({ title: "Search Feature", desc: `Searching for "${input.value}"... API integration ready.` });
 }
 
 function handleFilterChange() {}
