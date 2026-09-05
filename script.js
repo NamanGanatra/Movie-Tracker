@@ -163,7 +163,7 @@ async function registerUser() {
             closeModal("registerModal");
             nameInput.value = "";
             pinInput.value = "";
-            await showCustomDialog({ title: "Success 🎉", desc: `Profile "${name}" created successfully!` });
+            await showCustomDialog({ title: "Success", desc: `Profile "${name}" created successfully!` });
         })
         .catch(async (error) => {
             await showCustomDialog({ title: "Firebase Error", desc: error.message });
@@ -175,7 +175,7 @@ async function handleChangePinModal() {
     if (!activeUser) return;
 
     const currentPin = await showCustomDialog({
-        title: "🔑 Verify Current PIN",
+        title: "Verify Current PIN",
         desc: "Enter your current 4-Digit PIN to continue:",
         showInput: true,
         placeholder: "Current PIN"
@@ -189,7 +189,7 @@ async function handleChangePinModal() {
     }
 
     const newPin = await showCustomDialog({
-        title: "🔑 Set New PIN",
+        title: "Set New PIN",
         desc: "Enter your NEW 4-Digit PIN:",
         showInput: true,
         placeholder: "New 4-Digit PIN"
@@ -222,7 +222,7 @@ async function handleDeleteProfile() {
     }
 
     const confirmPin = await showCustomDialog({
-        title: "🗑️ Delete Profile",
+        title: "Delete Profile",
         desc: `Enter PIN for "${username}" to delete:`,
         showInput: true,
         placeholder: "4-Digit PIN"
@@ -242,7 +242,7 @@ async function handleDeleteProfile() {
 // Reset Database Data
 async function handleClearAllProfiles() {
     const confirmation = await showCustomDialog({
-        title: "⚠️ Danger Zone",
+        title: "Danger Zone",
         desc: "Type 'RESET' to wipe all profiles:",
         showInput: true,
         placeholder: "Type RESET",
@@ -280,9 +280,9 @@ function updateWelcomeTitle() {
     if (!welcomeTitle) return;
 
     if (activeUser) {
-        welcomeTitle.innerText = `🎬 ${activeUser.toUpperCase()}'S WATCHLIST`;
+        welcomeTitle.innerText = `${activeUser.toUpperCase()}'S WATCHLIST`;
     } else {
-        welcomeTitle.innerText = "🎬 MOVIE WATCHLIST";
+        welcomeTitle.innerText = "MOVIE WATCHLIST";
     }
 }
 
@@ -319,7 +319,7 @@ async function createPlaylist() {
     if (!activeUser) return;
 
     const playlistName = await showCustomDialog({
-        title: "📁 New Playlist",
+        title: "New Playlist",
         desc: "Enter a name for your new playlist:",
         showInput: true,
         placeholder: "e.g. Action Movies",
@@ -337,7 +337,7 @@ async function createPlaylist() {
     userPlaylists.push(trimmedName);
     db.ref("users/" + activeUser + "/playlists").set(userPlaylists)
         .then(async () => {
-            await showCustomDialog({ title: "Success 🎉", desc: `Playlist "${trimmedName}" created!` });
+            await showCustomDialog({ title: "Success", desc: `Playlist "${trimmedName}" created!` });
         })
         .catch(async (err) => {
             await showCustomDialog({ title: "Error", desc: err.message });
@@ -357,7 +357,7 @@ async function deletePlaylist() {
     }
 
     const confirmDelete = await showCustomDialog({
-        title: "🗑️ Delete Playlist",
+        title: "Delete Playlist",
         desc: `Are you sure you want to delete "${currentFilter}"? Movies in this playlist will move to 'Default'. Type DELETE to confirm:`,
         showInput: true,
         placeholder: "Type DELETE",
@@ -424,7 +424,7 @@ async function fetchFromOMDb(title, year = "", type = "") {
 
 // Watchmode API Fetch Function
 async function fetchStreamingSources(imdbID) {
-    if (!imdbID || imdbID === "N/A" || !WATCHMODE_API_KEY || WATCHMODE_API_KEY === "YOUR_WATCHMODE_API_KEY") {
+    if (!imdbID || imdbID === "N/A" || !WATCHMODE_API_KEY) {
         return [];
     }
 
@@ -437,6 +437,13 @@ async function fetchStreamingSources(imdbID) {
         console.error("Watchmode API Fetch Error:", err);
         return [];
     }
+}
+
+// Helper function to extract numeric runtime in minutes
+function getRuntimeInMinutes(runtimeStr) {
+    if (!runtimeStr || runtimeStr === "N/A") return 0;
+    const match = runtimeStr.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
 }
 
 // Add Movie with Duplicate Check
@@ -453,7 +460,7 @@ async function addMovie() {
     const type = typeInput ? typeInput.value : "";
     const playlist = playlistSelect ? playlistSelect.value : "Default";
 
-    // Check if the movie already exists in the user's watchlist
+    // Check if movie already exists in user's watchlist
     const isAlreadyAdded = watchlist.some(movie => 
         movie.Title.toLowerCase() === title.toLowerCase()
     );
@@ -471,7 +478,6 @@ async function addMovie() {
     const omdbData = await fetchFromOMDb(title, year, type);
 
     if (omdbData) {
-        // Double check against fetched official title from OMDb API
         const isOfficialTitleAdded = watchlist.some(movie => 
             movie.Title.toLowerCase() === omdbData.Title.toLowerCase() || 
             (movie.imdbID !== "N/A" && movie.imdbID === omdbData.imdbID)
@@ -495,6 +501,7 @@ async function addMovie() {
         Poster: "https://via.placeholder.com/300x450?text=" + encodeURIComponent(title),
         imdbRating: "N/A",
         imdbID: "N/A",
+        Runtime: "N/A",
         streamingSources: [],
         watched: false,
         playlist: playlist
@@ -507,6 +514,7 @@ async function addMovie() {
         newMovie.Poster = omdbData.Poster !== "N/A" ? omdbData.Poster : newMovie.Poster;
         newMovie.imdbRating = omdbData.imdbRating;
         newMovie.imdbID = omdbData.imdbID;
+        newMovie.Runtime = omdbData.Runtime || "N/A";
 
         if (omdbData.imdbID) {
             newMovie.streamingSources = await fetchStreamingSources(omdbData.imdbID);
@@ -534,6 +542,8 @@ function renderMovieCard(item) {
         </div>`;
     }
 
+    const runtimeDisplay = item.Runtime && item.Runtime !== "N/A" ? item.Runtime : "Runtime: N/A";
+
     const card = document.createElement("div");
     card.className = `movie-card ${item.watched ? 'watched' : ''}`;
     card.innerHTML = `
@@ -544,6 +554,7 @@ function renderMovieCard(item) {
         <div class="card-content">
             <h3 class="movie-title">${item.Title}</h3>
             <span class="release-date">${item.Year} | ${item.Type || 'movie'}</span>
+            <span class="runtime-info">⏱️ ${runtimeDisplay}</span>
             
             ${streamingUI}
 
@@ -574,35 +585,32 @@ function renderWatchlist() {
 
     if (!grid) return;
 
-    // Update Header Section Title
     if (sectionTitle) {
         if (selectedFilter === "All") {
-            sectionTitle.innerText = "🎬 ALL MOVIES";
+            sectionTitle.innerText = "ALL MOVIES";
         } else {
-            sectionTitle.innerText = `📁 ${selectedFilter.toUpperCase()}`;
+            sectionTitle.innerText = selectedFilter.toUpperCase();
         }
     }
 
     grid.innerHTML = "";
 
-    // Map items with original index
     let mappedList = watchlist.map((item, index) => ({ ...item, originalIndex: index }));
 
     if (mappedList.length === 0) {
         grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1; padding: 20px;">No movies found in your watchlist.</p>`;
-        updateProgressBar(0, 0);
+        updateProgressBar(0, 0, 0);
         return;
     }
 
     let totalWatched = 0;
     let totalItems = 0;
+    let totalMinutesWatched = 0;
 
     if (selectedFilter === "All") {
-        // Group movies by Playlist
         userPlaylists.forEach(pl => {
             let plMovies = mappedList.filter(item => (item.playlist || "Default") === pl);
             if (plMovies.length > 0) {
-                // Section Header for each Playlist
                 const groupHeader = document.createElement("div");
                 groupHeader.style.gridColumn = "1 / -1";
                 groupHeader.style.margin = "20px 0 10px 0";
@@ -610,39 +618,43 @@ function renderWatchlist() {
                 groupHeader.style.borderBottom = "2px solid #334155";
                 groupHeader.style.color = "#38bdf8";
                 groupHeader.style.fontSize = "1.2rem";
-                groupHeader.innerHTML = `📁 ${pl.toUpperCase()} (${plMovies.length})`;
+                groupHeader.innerText = `${pl.toUpperCase()} (${plMovies.length})`;
                 grid.appendChild(groupHeader);
 
-                // Sort: Unwatched first
                 plMovies.sort((a, b) => Number(a.watched) - Number(b.watched));
 
                 plMovies.forEach(item => {
-                    if (item.watched) totalWatched++;
+                    if (item.watched) {
+                        totalWatched++;
+                        totalMinutesWatched += getRuntimeInMinutes(item.Runtime);
+                    }
                     totalItems++;
                     grid.appendChild(renderMovieCard(item));
                 });
             }
         });
     } else {
-        // Filter View for Specific Playlist
         let filteredWatchlist = mappedList.filter(item => (item.playlist || "Default") === selectedFilter);
 
         if (filteredWatchlist.length === 0) {
             grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1; padding: 20px;">No movies found in this playlist.</p>`;
-            updateProgressBar(0, 0);
+            updateProgressBar(0, 0, 0);
             return;
         }
 
         filteredWatchlist.sort((a, b) => Number(a.watched) - Number(b.watched));
 
         filteredWatchlist.forEach((item) => {
-            if (item.watched) totalWatched++;
+            if (item.watched) {
+                totalWatched++;
+                totalMinutesWatched += getRuntimeInMinutes(item.Runtime);
+            }
             totalItems++;
             grid.appendChild(renderMovieCard(item));
         });
     }
 
-    updateProgressBar(totalWatched, totalItems);
+    updateProgressBar(totalWatched, totalItems, totalMinutesWatched);
 }
 
 function toggleWatched(originalIndex) {
@@ -651,14 +663,21 @@ function toggleWatched(originalIndex) {
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
-function updateProgressBar(watched, total) {
-    const text = document.getElementById("progressText");
+function updateProgressBar(watched, total, totalMinutes) {
+    const totalTitlesEl = document.getElementById("statTotalTitles");
+    const watchedTitlesEl = document.getElementById("statWatchedTitles");
+    const watchTimeEl = document.getElementById("statWatchTime");
+    const progressPercentageEl = document.getElementById("progressPercentage");
     const bar = document.getElementById("progressBar");
-    if (!text || !bar) return;
 
+    const hours = (totalMinutes / 60).toFixed(1);
     const percentage = total > 0 ? Math.round((watched / total) * 100) : 0;
-    text.innerText = `${watched} / ${total} Completed (${percentage}%)`;
-    bar.style.width = `${percentage}%`;
+
+    if (totalTitlesEl) totalTitlesEl.innerText = total;
+    if (watchedTitlesEl) watchedTitlesEl.innerText = watched;
+    if (watchTimeEl) watchTimeEl.innerText = hours;
+    if (progressPercentageEl) progressPercentageEl.innerText = `${percentage}%`;
+    if (bar) bar.style.width = `${percentage}%`;
 }
 
 function removeFromWatchlist(originalIndex) {
