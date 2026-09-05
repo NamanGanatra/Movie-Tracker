@@ -3,143 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOVIE TRACKER</title>
-    <link rel="stylesheet" href="styles.css?v=2.0">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <title>Watchlist & Movie Tracker</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Auth Screen -->
-    <div id="authScreen" class="auth-container">
-        <div class="auth-card">
-            <h2>🍿 Welcome Back</h2>
-            <p id="noProfilesMsg" style="display: none; color: #94a3b8;">No profiles found. Please create one.</p>
-            
-            <div id="loginFormContainer" class="form-group">
-                <label for="loginUserSelect">Select Profile</label>
-                <select id="loginUserSelect"></select>
-                <input type="password" id="loginPinInput" placeholder="4-Digit PIN" maxlength="4">
-                
-                <div class="auth-actions">
-                    <button class="btn-primary" onclick="login()">Login</button>
-                    <button class="btn-delete" onclick="handleDeleteProfile()">Delete Profile</button>
-                </div>
-            </div>
 
-            <hr class="divider">
-
-            <div class="auth-footer">
-                <button class="btn-secondary" onclick="openModal('registerModal')">+ Create New Profile</button>
-                <button class="btn-danger-link" onclick="handleClearAllProfiles()">Reset All Data</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Dashboard -->
-    <div id="dashboard" style="display: none;">
+    <div class="container">
         <!-- Header Nav -->
         <header class="top-nav">
             <div class="user-info">
-                <span id="activeUserLabel">User: </span>
-                <button class="btn-secondary" onclick="handleChangePinModal()">🔑 Change PIN</button>
-                <button class="btn-logout" onclick="logout()">Logout</button>
+                <span id="user-display-name">Welcome, User</span>
+                <button class="btn-primary" id="open-add-modal-btn">+ Add Movie</button>
+                <button class="btn-logout" id="logout-btn">Logout</button>
             </div>
         </header>
 
-        <main class="container">
-            <h1 id="welcomeTitle">🎬 Watchlist</h1>
-            <p class="subtitle">Track movies & TV shows, check ratings, and monitor watch progress.</p>
+        <p class="subtitle">Track your watched movies and manage your custom playlists.</p>
 
-            <!-- Progress Bar -->
-            <div class="progress-section">
-                <div class="progress-info">
-                    <span>Watch Progress</span>
-                    <span id="progressText">0 / 0 Completed (0%)</span>
-                </div>
-                <div class="progress-bar-bg">
-                    <div id="progressBar" class="progress-bar-fill"></div>
-                </div>
+        <!-- Feature 5: Stats & Analytics Dashboard -->
+        <div class="stats-dashboard">
+            <div class="stat-card">
+                <span class="stat-label">Total Movies</span>
+                <span class="stat-value" id="stat-total">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Watched</span>
+                <span class="stat-value" id="stat-watched">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Pending</span>
+                <span class="stat-value" id="stat-pending">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Avg. Rating</span>
+                <span class="stat-value" id="stat-avg-rating">0.0</span>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <section class="progress-section">
+            <div class="progress-info">
+                <span>Watchlist Completion</span>
+                <span id="progress-percentage">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-bar-fill"></div>
+            </div>
+        </section>
+
+        <!-- Controls Section -->
+        <section class="controls-card">
+            <!-- Search Controls -->
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search by movie title...">
+                <input type="number" id="rating-input" placeholder="Min IMDb Rating" min="0" max="10" step="0.1">
+                <button class="btn-secondary" id="reset-filters-btn">Reset</button>
             </div>
 
-            <!-- Search & Filter Controls -->
-            <div class="controls-card">
-                <div class="search-box">
-                    <input type="text" id="movieInput" placeholder="Movie or TV Show Title..." onkeypress="handleKeyPress(event)">
-                    <input type="number" id="yearInput" placeholder="Year (Opt.)" onkeypress="handleKeyPress(event)">
-                    <select id="typeInput">
-                        <option value="">All Types</option>
-                        <option value="movie">Movie</option>
-                        <option value="series">Series</option>
-                    </select>
-                    <select id="addPlaylistSelect">
-                        <option value="Default">Default Playlist</option>
-                    </select>
-                    <button class="btn-primary" onclick="addMovie()">Search & Add</button>
-                </div>
-
+            <!-- Filter & Feature 4: Sort Controls -->
+            <div class="filter-sort-wrapper">
                 <div class="filter-box">
-                    <label>Filter View:</label>
-                    <select id="playlistFilterSelect" onchange="handleFilterChange()">
-                        <option value="All">All Playlists</option>
+                    <select id="filter-status">
+                        <option value="all">All Statuses</option>
+                        <option value="watched">Watched Only</option>
+                        <option value="unwatched">Unwatched Only</option>
                     </select>
-                    <button class="btn-secondary" onclick="createPlaylist()">+ New Playlist</button>
-                    <!-- Added Delete Playlist Button -->
-                    <button class="btn-delete" onclick="deletePlaylist()">Delete Playlist</button>
+                    <select id="filter-playlist">
+                        <option value="all">All Playlists</option>
+                        <option value="Favorites">Favorites</option>
+                        <option value="Watch Later">Watch Later</option>
+                        <option value="Classics">Classics</option>
+                    </select>
+                </div>
+
+                <div class="sort-box">
+                    <select id="sort-by">
+                        <option value="default">Sort By: Default</option>
+                        <option value="rating-desc">IMDb Rating: High to Low</option>
+                        <option value="rating-asc">IMDb Rating: Low to High</option>
+                        <option value="title-asc">Title: A to Z</option>
+                        <option value="date-newest">Release Date: Newest First</option>
+                    </select>
                 </div>
             </div>
+        </section>
 
-            <!-- Dynamic Playlist Section Title -->
-            <h2 id="playlistSectionTitle" style="margin-top: 25px; margin-bottom: 15px; color: #f8fafc; font-size: 1.5rem; text-transform: uppercase;">🎬 ALL MOVIES</h2>
-
-            <!-- Dynamic Movies Grid -->
-            <div id="movieGrid" class="movie-grid"></div>
-        </main>
-    </div>
-
-    <!-- Register Profile Modal -->
-    <div id="registerModal" class="modal">
-        <div class="modal-content glass-card">
-            <h3>Create Profile</h3>
-            <input type="text" id="regNameInput" placeholder="Profile Name">
-            <input type="password" id="regPinInput" placeholder="4-Digit PIN" maxlength="4">
-            <div class="modal-actions">
-                <button class="btn-primary" onclick="registerUser()">Save Profile</button>
-                <button class="btn-secondary" onclick="closeModal('registerModal')">Cancel</button>
-            </div>
+        <!-- Movie Grid Section -->
+        <div class="section-title-container">
+            <h2 class="section-title">Your Collection</h2>
+        </div>
+        
+        <div class="movie-grid" id="movie-grid">
+            <!-- Movie cards injected dynamically -->
         </div>
     </div>
 
-    <!-- Custom Center Modal -->
-    <div id="customModal" class="modal">
-        <div class="modal-content glass-card glowing-modal">
-            <h3 id="customModalTitle">PIN Security</h3>
-            <p id="customModalDesc" class="modal-desc"></p>
-            <input type="password" id="customModalInput" placeholder="Enter PIN..." maxlength="20">
-            <div class="modal-actions">
-                <button id="customModalCancelBtn" class="btn-secondary" onclick="closeCustomModal(false)">Cancel</button>
-                <button id="customModalConfirmBtn" class="btn-primary" onclick="closeCustomModal(true)">Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Movie Details Modal -->
-    <div id="aboutModal" class="modal">
-        <div class="modal-content modal-large glass-card">
-            <div class="modal-body">
-                <img id="modalPoster" src="" alt="Poster">
-                <div class="modal-info">
-                    <h2 id="modalTitle"></h2>
-                    <p id="modalYear" class="modal-meta"></p>
-                    <p id="modalGenre" class="modal-meta"></p>
-                    <p id="modalRating" class="modal-rating"></p>
-                    <p id="modalPlot" class="modal-plot"></p>
-                    <button class="btn-secondary" onclick="closeModal('aboutModal')">Close</button>
+    <!-- Add Movie Modal -->
+    <div class="modal" id="add-modal">
+        <div class="modal-content">
+            <h2 style="color: #e50914; margin-bottom: 8px;">Add New Movie</h2>
+            <form id="add-movie-form">
+                <div class="form-group">
+                    <label for="movie-title-input">Movie Title</label>
+                    <input type="text" id="movie-title-input" required placeholder="e.g. Inception">
                 </div>
-            </div>
+                <div class="form-group">
+                    <label for="movie-rating-input">IMDb Rating</label>
+                    <input type="number" id="movie-rating-input" min="0" max="10" step="0.1" required placeholder="e.g. 8.8">
+                </div>
+                <div class="form-group">
+                    <label for="movie-poster-input">Poster Image URL</label>
+                    <input type="url" id="movie-poster-input" required placeholder="https://example.com/poster.jpg">
+                </div>
+                <div class="form-group">
+                    <label for="movie-date-input">Release Date</label>
+                    <input type="date" id="movie-date-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="movie-playlist-input">Playlist Category</label>
+                    <select id="movie-playlist-input">
+                        <option value="Watch Later">Watch Later</option>
+                        <option value="Favorites">Favorites</option>
+                        <option value="Classics">Classics</option>
+                    </select>
+                </div>
+                <div class="auth-actions" style="margin-top: 16px;">
+                    <button type="submit" class="btn-primary">Save Movie</button>
+                    <button type="button" class="btn-secondary" id="close-add-modal-btn">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <script src="script.js?v=2.0"></script>
+    <script src="app.js"></script>
 </body>
 </html>
