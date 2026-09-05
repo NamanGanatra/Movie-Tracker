@@ -274,7 +274,7 @@ function loadUserData() {
     });
 }
 
-// Update Point 1 Header Title (Profile Name)
+// Update Header Title with Active User Profile
 function updateWelcomeTitle() {
     const welcomeTitle = document.getElementById("welcomeTitle");
     if (!welcomeTitle) return;
@@ -366,7 +366,7 @@ async function deletePlaylist() {
 
     if (confirmDelete !== "DELETE") return;
 
-    // Move associated movies to Default playlist
+    // Relocate movies in deleted playlist back to Default
     watchlist = watchlist.map(item => {
         if (item.playlist === currentFilter) {
             return { ...item, playlist: "Default" };
@@ -374,10 +374,10 @@ async function deletePlaylist() {
         return item;
     });
 
-    // Remove playlist from state
+    // Remove selected playlist
     userPlaylists = userPlaylists.filter(pl => pl !== currentFilter);
 
-    // Save changes to Firebase Database
+    // Save changes to Database
     db.ref("users/" + activeUser + "/playlists").set(userPlaylists);
     db.ref("watchlists/" + activeUser).set(watchlist)
         .then(async () => {
@@ -439,7 +439,7 @@ async function fetchStreamingSources(imdbID) {
     }
 }
 
-// Add Movie to Watchlist
+// Add Movie with Duplicate Check
 async function addMovie() {
     const input = document.getElementById("movieInput");
     const yearInput = document.getElementById("yearInput");
@@ -453,7 +453,40 @@ async function addMovie() {
     const type = typeInput ? typeInput.value : "";
     const playlist = playlistSelect ? playlistSelect.value : "Default";
 
+    // Check if the movie already exists in the user's watchlist
+    const isAlreadyAdded = watchlist.some(movie => 
+        movie.Title.toLowerCase() === title.toLowerCase()
+    );
+
+    if (isAlreadyAdded) {
+        await showCustomDialog({ 
+            title: "Already Added!", 
+            desc: `"${title}" is already in your watchlist.` 
+        });
+        input.value = "";
+        if (yearInput) yearInput.value = "";
+        return;
+    }
+
     const omdbData = await fetchFromOMDb(title, year, type);
+
+    if (omdbData) {
+        // Double check against fetched official title from OMDb API
+        const isOfficialTitleAdded = watchlist.some(movie => 
+            movie.Title.toLowerCase() === omdbData.Title.toLowerCase() || 
+            (movie.imdbID !== "N/A" && movie.imdbID === omdbData.imdbID)
+        );
+
+        if (isOfficialTitleAdded) {
+            await showCustomDialog({ 
+                title: "Already Added!", 
+                desc: `"${omdbData.Title}" is already present in your watchlist.` 
+            });
+            input.value = "";
+            if (yearInput) yearInput.value = "";
+            return;
+        }
+    }
 
     let newMovie = {
         Title: title,
@@ -487,7 +520,7 @@ async function addMovie() {
     if (yearInput) yearInput.value = "";
 }
 
-// Render Watchlist & Update Point 2 Title (Playlist Name)
+// Render Watchlist & Update Section Title
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     const filterSelect = document.getElementById("playlistFilterSelect");
@@ -496,7 +529,7 @@ function renderWatchlist() {
 
     if (!grid) return;
 
-    // Point 2: Update Section Title according to selected playlist
+    // Update Section Title according to selected playlist
     if (sectionTitle) {
         if (selectedFilter === "All") {
             sectionTitle.innerText = "🎬 ALL MOVIES";
@@ -507,7 +540,7 @@ function renderWatchlist() {
 
     grid.innerHTML = "";
 
-    // Map items to retain original indices
+    // Map items to retain original array indices
     let mappedList = watchlist.map((item, index) => ({ ...item, originalIndex: index }));
 
     // Filter list based on selected playlist
