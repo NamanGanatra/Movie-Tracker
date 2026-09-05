@@ -10,6 +10,10 @@ const firebaseConfig = {
     measurementId: "G-C13XJBKGHV"
 };
 
+// API Keys configuration (Apni Watchmode & OMDb API Keys add/replace karein)
+const OMDB_API_KEY = "f8a4d404"; // e.g. "tt123456"
+const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y ";
+
 // Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -339,7 +343,44 @@ function changeMoviePlaylist(index, newPlaylist) {
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
-// Add Movie with Playlist Support
+// OMDb API Fetch Function
+async function fetchFromOMDb(title, year = "", type = "") {
+    try {
+        let url = `https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&t=${encodeURIComponent(title)}`;
+        if (year) url += `&y=${year}`;
+        if (type) url += `&type=${type}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.Response === "True") {
+            return data;
+        }
+        return null;
+    } catch (err) {
+        console.error("OMDb API Fetch Error:", err);
+        return null;
+    }
+}
+
+// Watchmode API Fetch Function (Streaming Links & Sources)
+async function fetchStreamingSources(imdbID) {
+    if (!imdbID || imdbID === "N/A" || !WATCHMODE_API_KEY || WATCHMODE_API_KEY === "YOUR_WATCHMODE_API_KEY") {
+        return [];
+    }
+
+    try {
+        const url = `https://api.watchmode.com/v1/title/${imdbID}/sources/?apiKey=${WATCHMODE_API_KEY}`;
+        const res = await fetch(url);
+        const sources = await res.json();
+        return Array.isArray(sources) ? sources : [];
+    } catch (err) {
+        console.error("Watchmode API Fetch Error:", err);
+        return [];
+    }
+}
+
+// Add Movie with OMDb & Watchmode Integration
 async function addMovie() {
     const input = document.getElementById("movieInput");
     const yearInput = document.getElementById("yearInput");
@@ -353,16 +394,34 @@ async function addMovie() {
     const type = typeInput ? typeInput.value : "";
     const playlist = playlistSelect ? playlistSelect.value : "Default";
 
-    // Dummy Movie Object (OMDb/API integrate karte waqt poster aur imdbRating update kar sakte ho)
-    const newMovie = {
+    // OMDb API se Real Data Fetch
+    const omdbData = await fetchFromOMDb(title, year, type);
+
+    let newMovie = {
         Title: title,
         Year: year || "N/A",
         Type: type || "movie",
         Poster: "https://via.placeholder.com/300x450?text=" + encodeURIComponent(title),
         imdbRating: "N/A",
+        imdbID: "N/A",
+        streamingSources: [],
         watched: false,
         playlist: playlist
     };
+
+    if (omdbData) {
+        newMovie.Title = omdbData.Title;
+        newMovie.Year = omdbData.Year;
+        newMovie.Type = omdbData.Type;
+        newMovie.Poster = omdbData.Poster !== "N/A" ? omdbData.Poster : newMovie.Poster;
+        newMovie.imdbRating = omdbData.imdbRating;
+        newMovie.imdbID = omdbData.imdbID;
+
+        // Watchmode API Se Streaming Details Fetch
+        if (omdbData.imdbID) {
+            newMovie.streamingSources = await fetchStreamingSources(omdbData.imdbID);
+        }
+    }
 
     watchlist.push(newMovie);
     db.ref("watchlists/" + activeUser).set(watchlist);
@@ -371,7 +430,7 @@ async function addMovie() {
     if (yearInput) yearInput.value = "";
 }
 
-// Render Watchlist with Filtering
+// Render Watchlist with Filtering & Streaming Sources
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     const filterSelect = document.getElementById("playlistFilterSelect");
@@ -405,6 +464,15 @@ function renderWatchlist() {
             `<option value="${pl}" ${itemPlaylist === pl ? 'selected' : ''}>${pl}</option>`
         ).join("");
 
+        // Streaming Links Render Format (Watchmode Data)
+        let streamingUI = "";
+        if (item.streamingSources && item.streamingSources.length > 0) {
+            const topSources = item.streamingSources.slice(0, 2); // Max 2 platforms preview
+            streamingUI = `<div class="streaming-info">
+                <small>Available on: ${topSources.map(s => `<a href="${s.web_url}" target="_blank" style="color: #00d2ff;">${s.name}</a>`).join(", ")}</small>
+            </div>`;
+        }
+
         const card = document.createElement("div");
         card.className = `movie-card ${item.watched ? 'watched' : ''}`;
         card.innerHTML = `
@@ -416,6 +484,8 @@ function renderWatchlist() {
                 <h3 class="movie-title">${item.Title}</h3>
                 <span class="release-date">${item.Year} | ${item.Type || 'movie'}</span>
                 
+                ${streamingUI}
+
                 <div class="playlist-selector">
                     <span>Playlist:</span>
                     <select onchange="changeMoviePlaylist(${originalIndex}, this.value)">
