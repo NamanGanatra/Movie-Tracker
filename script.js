@@ -12,7 +12,7 @@ const firebaseConfig = {
 
 // API Keys configuration
 const OMDB_API_KEY = "f8a4d404"; 
-const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y ";
+const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y";
 
 // Initialize Firebase
 if (!firebase.apps.length) {
@@ -73,7 +73,7 @@ function closeCustomModal(confirmed) {
     }
 }
 
-// Load Profiles
+// Load Profiles from Database
 function loadUsersFromStorage() {
     db.ref("users").on("value", (snapshot) => {
         users = snapshot.val() || {};
@@ -114,7 +114,7 @@ function populateLoginDropdown() {
     }
 }
 
-// Login
+// User Login Function
 async function login() {
     const select = document.getElementById("loginUserSelect");
     const username = select ? select.value : null;
@@ -131,8 +131,8 @@ async function login() {
         document.getElementById("dashboard").style.display = "block";
         
         document.getElementById("activeUserLabel").innerText = `User: ${activeUser}`;
-        
         document.getElementById("loginPinInput").value = "";
+        
         updateWelcomeTitle();
         loadUserData();
     } else {
@@ -274,18 +274,15 @@ function loadUserData() {
     });
 }
 
-// Dynamic Title Heading Update Function
+// Update Point 1 Header Title (Profile Name)
 function updateWelcomeTitle() {
-    const filterSelect = document.getElementById("playlistFilterSelect");
-    const selectedFilter = filterSelect ? filterSelect.value : "All";
     const welcomeTitle = document.getElementById("welcomeTitle");
-
     if (!welcomeTitle) return;
 
-    if (selectedFilter === "All") {
-        welcomeTitle.innerText = "🎬 ALL";
+    if (activeUser) {
+        welcomeTitle.innerText = `🎬 ${activeUser.toUpperCase()}'S WATCHLIST`;
     } else {
-        welcomeTitle.innerText = `📁 ${selectedFilter.toUpperCase()}`;
+        welcomeTitle.innerText = "🎬 MOVIE WATCHLIST";
     }
 }
 
@@ -315,7 +312,6 @@ function updatePlaylistDropdowns() {
         });
         filterSelect.value = currentFilter;
     }
-    updateWelcomeTitle();
 }
 
 // Create New Playlist Function
@@ -348,9 +344,54 @@ async function createPlaylist() {
         });
 }
 
-// Filter View Change
+// Delete Active/Selected Playlist Function
+async function deletePlaylist() {
+    if (!activeUser) return;
+
+    const filterSelect = document.getElementById("playlistFilterSelect");
+    const currentFilter = filterSelect ? filterSelect.value : "All";
+
+    if (currentFilter === "All" || currentFilter === "Default") {
+        await showCustomDialog({ title: "Action Denied", desc: "You cannot delete 'All' or 'Default' playlist." });
+        return;
+    }
+
+    const confirmDelete = await showCustomDialog({
+        title: "🗑️ Delete Playlist",
+        desc: `Are you sure you want to delete "${currentFilter}"? Movies in this playlist will move to 'Default'. Type DELETE to confirm:`,
+        showInput: true,
+        placeholder: "Type DELETE",
+        isPassword: false
+    });
+
+    if (confirmDelete !== "DELETE") return;
+
+    // Move associated movies to Default playlist
+    watchlist = watchlist.map(item => {
+        if (item.playlist === currentFilter) {
+            return { ...item, playlist: "Default" };
+        }
+        return item;
+    });
+
+    // Remove playlist from state
+    userPlaylists = userPlaylists.filter(pl => pl !== currentFilter);
+
+    // Save changes to Firebase Database
+    db.ref("users/" + activeUser + "/playlists").set(userPlaylists);
+    db.ref("watchlists/" + activeUser).set(watchlist)
+        .then(async () => {
+            filterSelect.value = "All";
+            renderWatchlist();
+            await showCustomDialog({ title: "Deleted", desc: `Playlist "${currentFilter}" removed successfully.` });
+        })
+        .catch(async (err) => {
+            await showCustomDialog({ title: "Error", desc: err.message });
+        });
+}
+
+// Filter View Change Event
 function handleFilterChange() {
-    updateWelcomeTitle();
     renderWatchlist();
 }
 
@@ -398,7 +439,7 @@ async function fetchStreamingSources(imdbID) {
     }
 }
 
-// Add Movie
+// Add Movie to Watchlist
 async function addMovie() {
     const input = document.getElementById("movieInput");
     const yearInput = document.getElementById("yearInput");
@@ -446,32 +487,42 @@ async function addMovie() {
     if (yearInput) yearInput.value = "";
 }
 
-// Render Watchlist with Sorting (Unwatched first, Watched at bottom)
+// Render Watchlist & Update Point 2 Title (Playlist Name)
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     const filterSelect = document.getElementById("playlistFilterSelect");
+    const sectionTitle = document.getElementById("playlistSectionTitle");
     const selectedFilter = filterSelect ? filterSelect.value : "All";
 
     if (!grid) return;
 
+    // Point 2: Update Section Title according to selected playlist
+    if (sectionTitle) {
+        if (selectedFilter === "All") {
+            sectionTitle.innerText = "🎬 ALL MOVIES";
+        } else {
+            sectionTitle.innerText = `📁 ${selectedFilter.toUpperCase()}`;
+        }
+    }
+
     grid.innerHTML = "";
 
-    // Original index mapping maintain karne ke liye object Array create kiya
+    // Map items to retain original indices
     let mappedList = watchlist.map((item, index) => ({ ...item, originalIndex: index }));
 
-    // Filter by Playlist
+    // Filter list based on selected playlist
     let filteredWatchlist = mappedList.filter(item => {
         if (selectedFilter === "All") return true;
         return (item.playlist || "Default") === selectedFilter;
     });
 
     if (filteredWatchlist.length === 0) {
-        grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1;">No movies found in this playlist.</p>`;
+        grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1; padding: 20px;">No movies found in this playlist.</p>`;
         updateProgressBar(0, 0);
         return;
     }
 
-    // Sort: Unwatched movies pehle, Watched movies neeche
+    // Sort: Unwatched movies first, Watched movies at bottom
     filteredWatchlist.sort((a, b) => Number(a.watched) - Number(b.watched));
 
     let watchedCount = 0;
