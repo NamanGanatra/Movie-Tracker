@@ -84,8 +84,13 @@
                         <option value="All">All Playlists</option>
                     </select>
                     <button class="btn-secondary" onclick="createPlaylist()">+ New Playlist</button>
+                    <!-- Added Delete Playlist Button -->
+                    <button class="btn-delete" onclick="deletePlaylist()">Delete Playlist</button>
                 </div>
             </div>
+
+            <!-- Dynamic Playlist Section Title -->
+            <h2 id="playlistSectionTitle" style="margin-top: 25px; margin-bottom: 15px; color: #f8fafc; font-size: 1.5rem; text-transform: uppercase;">🎬 ALL MOVIES</h2>
 
             <!-- Dynamic Movies Grid -->
             <div id="movieGrid" class="movie-grid"></div>
