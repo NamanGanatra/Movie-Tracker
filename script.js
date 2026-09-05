@@ -520,7 +520,52 @@ async function addMovie() {
     if (yearInput) yearInput.value = "";
 }
 
-// Render Watchlist & Update Section Title
+// Render HTML Movie Card Element
+function renderMovieCard(item) {
+    let playlistOptions = userPlaylists.map(pl => 
+        `<option value="${pl}" ${(item.playlist || "Default") === pl ? 'selected' : ''}>${pl}</option>`
+    ).join("");
+
+    let streamingUI = "";
+    if (item.streamingSources && item.streamingSources.length > 0) {
+        const topSources = item.streamingSources.slice(0, 2);
+        streamingUI = `<div class="streaming-info">
+            <small>Available on: ${topSources.map(s => `<a href="${s.web_url}" target="_blank" style="color: #00d2ff;">${s.name}</a>`).join(", ")}</small>
+        </div>`;
+    }
+
+    const card = document.createElement("div");
+    card.className = `movie-card ${item.watched ? 'watched' : ''}`;
+    card.innerHTML = `
+        <div class="poster-wrapper">
+            <img src="${item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.Title}">
+            <span class="imdb-tag">⭐ ${item.imdbRating || 'N/A'}</span>
+        </div>
+        <div class="card-content">
+            <h3 class="movie-title">${item.Title}</h3>
+            <span class="release-date">${item.Year} | ${item.Type || 'movie'}</span>
+            
+            ${streamingUI}
+
+            <div class="playlist-selector">
+                <span>Playlist:</span>
+                <select onchange="changeMoviePlaylist(${item.originalIndex}, this.value)">
+                    ${playlistOptions}
+                </select>
+            </div>
+
+            <div class="card-actions">
+                <label class="checkbox-label">
+                    <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${item.originalIndex})"> Watched
+                </label>
+                <button class="btn-delete" onclick="removeFromWatchlist(${item.originalIndex})">Remove</button>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+// Render Watchlist with Grouped View in 'All'
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     const filterSelect = document.getElementById("playlistFilterSelect");
@@ -529,7 +574,7 @@ function renderWatchlist() {
 
     if (!grid) return;
 
-    // Update Section Title according to selected playlist
+    // Update Header Section Title
     if (sectionTitle) {
         if (selectedFilter === "All") {
             sectionTitle.innerText = "🎬 ALL MOVIES";
@@ -540,73 +585,64 @@ function renderWatchlist() {
 
     grid.innerHTML = "";
 
-    // Map items to retain original array indices
+    // Map items with original index
     let mappedList = watchlist.map((item, index) => ({ ...item, originalIndex: index }));
 
-    // Filter list based on selected playlist
-    let filteredWatchlist = mappedList.filter(item => {
-        if (selectedFilter === "All") return true;
-        return (item.playlist || "Default") === selectedFilter;
-    });
-
-    if (filteredWatchlist.length === 0) {
-        grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1; padding: 20px;">No movies found in this playlist.</p>`;
+    if (mappedList.length === 0) {
+        grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1; padding: 20px;">No movies found in your watchlist.</p>`;
         updateProgressBar(0, 0);
         return;
     }
 
-    // Sort: Unwatched movies first, Watched movies at bottom
-    filteredWatchlist.sort((a, b) => Number(a.watched) - Number(b.watched));
+    let totalWatched = 0;
+    let totalItems = 0;
 
-    let watchedCount = 0;
+    if (selectedFilter === "All") {
+        // Group movies by Playlist
+        userPlaylists.forEach(pl => {
+            let plMovies = mappedList.filter(item => (item.playlist || "Default") === pl);
+            if (plMovies.length > 0) {
+                // Section Header for each Playlist
+                const groupHeader = document.createElement("div");
+                groupHeader.style.gridColumn = "1 / -1";
+                groupHeader.style.margin = "20px 0 10px 0";
+                groupHeader.style.paddingBottom = "5px";
+                groupHeader.style.borderBottom = "2px solid #334155";
+                groupHeader.style.color = "#38bdf8";
+                groupHeader.style.fontSize = "1.2rem";
+                groupHeader.innerHTML = `📁 ${pl.toUpperCase()} (${plMovies.length})`;
+                grid.appendChild(groupHeader);
 
-    filteredWatchlist.forEach((item) => {
-        if (item.watched) watchedCount++;
+                // Sort: Unwatched first
+                plMovies.sort((a, b) => Number(a.watched) - Number(b.watched));
 
-        let playlistOptions = userPlaylists.map(pl => 
-            `<option value="${pl}" ${(item.playlist || "Default") === pl ? 'selected' : ''}>${pl}</option>`
-        ).join("");
+                plMovies.forEach(item => {
+                    if (item.watched) totalWatched++;
+                    totalItems++;
+                    grid.appendChild(renderMovieCard(item));
+                });
+            }
+        });
+    } else {
+        // Filter View for Specific Playlist
+        let filteredWatchlist = mappedList.filter(item => (item.playlist || "Default") === selectedFilter);
 
-        let streamingUI = "";
-        if (item.streamingSources && item.streamingSources.length > 0) {
-            const topSources = item.streamingSources.slice(0, 2);
-            streamingUI = `<div class="streaming-info">
-                <small>Available on: ${topSources.map(s => `<a href="${s.web_url}" target="_blank" style="color: #00d2ff;">${s.name}</a>`).join(", ")}</small>
-            </div>`;
+        if (filteredWatchlist.length === 0) {
+            grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1; padding: 20px;">No movies found in this playlist.</p>`;
+            updateProgressBar(0, 0);
+            return;
         }
 
-        const card = document.createElement("div");
-        card.className = `movie-card ${item.watched ? 'watched' : ''}`;
-        card.innerHTML = `
-            <div class="poster-wrapper">
-                <img src="${item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${item.Title}">
-                <span class="imdb-tag">⭐ ${item.imdbRating || 'N/A'}</span>
-            </div>
-            <div class="card-content">
-                <h3 class="movie-title">${item.Title}</h3>
-                <span class="release-date">${item.Year} | ${item.Type || 'movie'}</span>
-                
-                ${streamingUI}
+        filteredWatchlist.sort((a, b) => Number(a.watched) - Number(b.watched));
 
-                <div class="playlist-selector">
-                    <span>Playlist:</span>
-                    <select onchange="changeMoviePlaylist(${item.originalIndex}, this.value)">
-                        ${playlistOptions}
-                    </select>
-                </div>
+        filteredWatchlist.forEach((item) => {
+            if (item.watched) totalWatched++;
+            totalItems++;
+            grid.appendChild(renderMovieCard(item));
+        });
+    }
 
-                <div class="card-actions">
-                    <label class="checkbox-label">
-                        <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${item.originalIndex})"> Watched
-                    </label>
-                    <button class="btn-delete" onclick="removeFromWatchlist(${item.originalIndex})">Remove</button>
-                </div>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
-
-    updateProgressBar(watchedCount, filteredWatchlist.length);
+    updateProgressBar(totalWatched, totalItems);
 }
 
 function toggleWatched(originalIndex) {
