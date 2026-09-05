@@ -133,6 +133,7 @@ async function login() {
         document.getElementById("activeUserLabel").innerText = `User: ${activeUser}`;
         
         document.getElementById("loginPinInput").value = "";
+        updateWelcomeTitle();
         loadUserData();
     } else {
         await showCustomDialog({ title: "Access Denied", desc: "Incorrect PIN. Please try again." });
@@ -273,15 +274,18 @@ function loadUserData() {
     });
 }
 
-// Title Heading Update Function
+// Dynamic Title Heading Update Function
 function updateWelcomeTitle() {
     const filterSelect = document.getElementById("playlistFilterSelect");
     const selectedFilter = filterSelect ? filterSelect.value : "All";
-    
+    const welcomeTitle = document.getElementById("welcomeTitle");
+
+    if (!welcomeTitle) return;
+
     if (selectedFilter === "All") {
-        document.getElementById("welcomeTitle").innerText = `🎬 ${activeUser}'s Watchlist`;
+        welcomeTitle.innerText = "🎬 ALL";
     } else {
-        document.getElementById("welcomeTitle").innerText = `📁 ${selectedFilter} Playlist`;
+        welcomeTitle.innerText = `📁 ${selectedFilter.toUpperCase()}`;
     }
 }
 
@@ -567,19 +571,4 @@ function openModal(id) {
 function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = "none";
-}
-
-// Dynamic Title Heading Update Function
-function updateWelcomeTitle() {
-    const filterSelect = document.getElementById("playlistFilterSelect");
-    const selectedFilter = filterSelect ? filterSelect.value : "All";
-    const welcomeTitle = document.getElementById("welcomeTitle");
-
-    if (!welcomeTitle) return;
-
-    if (selectedFilter === "All") {
-        welcomeTitle.innerText = "🎬 ALL";
-    } else {
-        welcomeTitle.innerText = `📁 ${selectedFilter.toUpperCase()}`;
-    }
 }
