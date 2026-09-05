@@ -260,6 +260,7 @@ button:active {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 22px;
+    margin-top: 25px; /* Added spacing from top control box */
 }
 
 .playlist-section-header {
