@@ -83,7 +83,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     border: 1px solid #282828;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
@@ -103,6 +103,22 @@ body {
 .search-box input[type="number"], .search-box select, .filter-box select {
     flex: 1;
     min-width: 120px;
+}
+
+/* Section Title Styling (Point 2) */
+.section-title-container {
+    margin-top: 20px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e50914;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 /* Inputs & Selects */
@@ -260,29 +276,6 @@ button:active {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 22px;
-    margin-top: 25px; /* Added spacing from top control box */
-}
-
-.playlist-section-header {
-    grid-column: 1 / -1;
-    margin-top: 30px;
-    border-bottom: 2px solid #e50914;
-    padding-bottom: 8px;
-}
-
-.playlist-section-header h2 {
-    font-size: 20px;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-}
-
-.playlist-count {
-    font-size: 13px;
-    color: #8c8c8c;
-    font-weight: normal;
 }
 
 .movie-card {
@@ -385,49 +378,7 @@ button:active {
     color: #cccccc;
 }
 
-.action-buttons {
-    display: flex;
-    gap: 6px;
-}
-
-.action-buttons button {
-    padding: 6px 10px;
-    font-size: 11px;
-}
-
-/* OTT Badges */
-.ott-container {
-    margin-top: 8px;
-    font-size: 11px;
-    color: #aaaaaa;
-}
-
-.ott-badges-wrapper {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 4px;
-}
-
-.ott-badge {
-    background: #e50914;
-    color: #ffffff;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 7px;
-    border-radius: 4px;
-    text-transform: capitalize;
-}
-
-.ott-badge-none {
-    background: #2a2a2a;
-    color: #777777;
-    font-size: 10px;
-    padding: 3px 7px;
-    border-radius: 4px;
-}
-
-/* Modal */
+/* Modal System */
 .modal {
     display: none;
     position: fixed;
@@ -453,48 +404,4 @@ button:active {
     gap: 16px;
     border: 1px solid #282828;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-}
-
-.modal-large {
-    max-width: 620px;
-}
-
-.modal-body {
-    display: flex;
-    gap: 20px;
-}
-
-.modal-body img {
-    width: 160px;
-    height: 240px;
-    object-fit: cover;
-    border-radius: 6px;
-}
-
-.modal-info {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.modal-meta {
-    font-size: 13px;
-    color: #aaaaaa;
-}
-
-.modal-rating {
-    color: #f5c518;
-    font-weight: 800;
-}
-
-.modal-plot {
-    font-size: 13px;
-    line-height: 1.5;
-    color: #dddddd;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
 }
