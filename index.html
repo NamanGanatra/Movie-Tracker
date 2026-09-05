@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOVIE TRACKER</title>
-    <link rel="stylesheet" href="styles.css?v=2.0">
+    <link rel="stylesheet" href="styles.css?v=2.1">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -13,7 +13,7 @@
     <!-- Auth Screen -->
     <div id="authScreen" class="auth-container">
         <div class="auth-card">
-            <h2>🍿 Welcome Back</h2>
+            <h2>Welcome Back</h2>
             <p id="noProfilesMsg" style="display: none; color: #94a3b8;">No profiles found. Please create one.</p>
             
             <div id="loginFormContainer" class="form-group">
@@ -42,20 +42,38 @@
         <header class="top-nav">
             <div class="user-info">
                 <span id="activeUserLabel">User: </span>
-                <button class="btn-secondary" onclick="handleChangePinModal()">🔑 Change PIN</button>
+                <button class="btn-secondary" onclick="handleChangePinModal()">Change PIN</button>
                 <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
         </header>
 
         <main class="container">
-            <h1 id="welcomeTitle">🎬 Watchlist</h1>
+            <h1 id="welcomeTitle">Watchlist</h1>
             <p class="subtitle">Track movies & TV shows, check ratings, and monitor watch progress.</p>
+
+            <!-- Stat Cards & Progress Section -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div>TOTAL TITLES</div>
+                    <div id="statTotalTitles" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>WATCHED</div>
+                    <div id="statWatchedTitles" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>TOTAL WATCH TIME</div>
+                    <div class="stat-value">
+                        <span id="statWatchTime">0</span> <span class="unit-text">hrs</span>
+                    </div>
+                </div>
+            </div>
 
             <!-- Progress Bar -->
             <div class="progress-section">
                 <div class="progress-info">
-                    <span>Watch Progress</span>
-                    <span id="progressText">0 / 0 Completed (0%)</span>
+                    <span>Completion Progress</span>
+                    <span id="progressPercentage">0%</span>
                 </div>
                 <div class="progress-bar-bg">
                     <div id="progressBar" class="progress-bar-fill"></div>
@@ -84,13 +102,12 @@
                         <option value="All">All Playlists</option>
                     </select>
                     <button class="btn-secondary" onclick="createPlaylist()">+ New Playlist</button>
-                    <!-- Added Delete Playlist Button -->
                     <button class="btn-delete" onclick="deletePlaylist()">Delete Playlist</button>
                 </div>
             </div>
 
             <!-- Dynamic Playlist Section Title -->
-            <h2 id="playlistSectionTitle" style="margin-top: 25px; margin-bottom: 15px; color: #f8fafc; font-size: 1.5rem; text-transform: uppercase;">🎬 ALL MOVIES</h2>
+            <h2 id="playlistSectionTitle" class="section-title">ALL MOVIES</h2>
 
             <!-- Dynamic Movies Grid -->
             <div id="movieGrid" class="movie-grid"></div>
@@ -140,6 +157,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.0"></script>
+    <script src="script.js?v=2.1"></script>
 </body>
 </html>
