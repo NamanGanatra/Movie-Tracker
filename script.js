@@ -568,3 +568,18 @@ function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = "none";
 }
+
+// Dynamic Title Heading Update Function
+function updateWelcomeTitle() {
+    const filterSelect = document.getElementById("playlistFilterSelect");
+    const selectedFilter = filterSelect ? filterSelect.value : "All";
+    const welcomeTitle = document.getElementById("welcomeTitle");
+
+    if (!welcomeTitle) return;
+
+    if (selectedFilter === "All") {
+        welcomeTitle.innerText = "🎬 ALL";
+    } else {
+        welcomeTitle.innerText = `📁 ${selectedFilter.toUpperCase()}`;
+    }
+}
