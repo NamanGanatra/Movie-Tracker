@@ -10,8 +10,8 @@ const firebaseConfig = {
     measurementId: "G-C13XJBKGHV"
 };
 
-// API Keys configuration (Apni Watchmode & OMDb API Keys add/replace karein)
-const OMDB_API_KEY = "f8a4d404"; // e.g. "tt123456"
+// API Keys configuration
+const OMDB_API_KEY = "f8a4d404"; 
 const WATCHMODE_API_KEY = "QE6qcae9K1XCNm9k3SvbDLcQDVZt4V30YvU5hk0Y ";
 
 // Initialize Firebase
@@ -131,8 +131,7 @@ async function login() {
         document.getElementById("dashboard").style.display = "block";
         
         document.getElementById("activeUserLabel").innerText = `User: ${activeUser}`;
-        document.getElementById("welcomeTitle").innerText = `🎬 ${activeUser}'s Watchlist`;
-
+        
         document.getElementById("loginPinInput").value = "";
         loadUserData();
     } else {
@@ -269,8 +268,21 @@ function loadUserData() {
     // Load Watchlist Data
     db.ref("watchlists/" + activeUser).on("value", (snapshot) => {
         watchlist = snapshot.val() || [];
+        updateWelcomeTitle();
         renderWatchlist();
     });
+}
+
+// Title Heading Update Function
+function updateWelcomeTitle() {
+    const filterSelect = document.getElementById("playlistFilterSelect");
+    const selectedFilter = filterSelect ? filterSelect.value : "All";
+    
+    if (selectedFilter === "All") {
+        document.getElementById("welcomeTitle").innerText = `🎬 ${activeUser}'s Watchlist`;
+    } else {
+        document.getElementById("welcomeTitle").innerText = `📁 ${selectedFilter} Playlist`;
+    }
 }
 
 // Populate Playlists Dropdowns
@@ -299,6 +311,7 @@ function updatePlaylistDropdowns() {
         });
         filterSelect.value = currentFilter;
     }
+    updateWelcomeTitle();
 }
 
 // Create New Playlist Function
@@ -333,13 +346,14 @@ async function createPlaylist() {
 
 // Filter View Change
 function handleFilterChange() {
+    updateWelcomeTitle();
     renderWatchlist();
 }
 
 // Change Movie Playlist Function
-function changeMoviePlaylist(index, newPlaylist) {
+function changeMoviePlaylist(originalIndex, newPlaylist) {
     if (!activeUser) return;
-    watchlist[index].playlist = newPlaylist;
+    watchlist[originalIndex].playlist = newPlaylist;
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
@@ -363,7 +377,7 @@ async function fetchFromOMDb(title, year = "", type = "") {
     }
 }
 
-// Watchmode API Fetch Function (Streaming Links & Sources)
+// Watchmode API Fetch Function
 async function fetchStreamingSources(imdbID) {
     if (!imdbID || imdbID === "N/A" || !WATCHMODE_API_KEY || WATCHMODE_API_KEY === "YOUR_WATCHMODE_API_KEY") {
         return [];
@@ -380,7 +394,7 @@ async function fetchStreamingSources(imdbID) {
     }
 }
 
-// Add Movie with OMDb & Watchmode Integration
+// Add Movie
 async function addMovie() {
     const input = document.getElementById("movieInput");
     const yearInput = document.getElementById("yearInput");
@@ -394,7 +408,6 @@ async function addMovie() {
     const type = typeInput ? typeInput.value : "";
     const playlist = playlistSelect ? playlistSelect.value : "Default";
 
-    // OMDb API se Real Data Fetch
     const omdbData = await fetchFromOMDb(title, year, type);
 
     let newMovie = {
@@ -417,7 +430,6 @@ async function addMovie() {
         newMovie.imdbRating = omdbData.imdbRating;
         newMovie.imdbID = omdbData.imdbID;
 
-        // Watchmode API Se Streaming Details Fetch
         if (omdbData.imdbID) {
             newMovie.streamingSources = await fetchStreamingSources(omdbData.imdbID);
         }
@@ -430,7 +442,7 @@ async function addMovie() {
     if (yearInput) yearInput.value = "";
 }
 
-// Render Watchlist with Filtering & Streaming Sources
+// Render Watchlist with Sorting (Unwatched first, Watched at bottom)
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     const filterSelect = document.getElementById("playlistFilterSelect");
@@ -440,7 +452,11 @@ function renderWatchlist() {
 
     grid.innerHTML = "";
 
-    const filteredWatchlist = watchlist.filter(item => {
+    // Original index mapping maintain karne ke liye object Array create kiya
+    let mappedList = watchlist.map((item, index) => ({ ...item, originalIndex: index }));
+
+    // Filter by Playlist
+    let filteredWatchlist = mappedList.filter(item => {
         if (selectedFilter === "All") return true;
         return (item.playlist || "Default") === selectedFilter;
     });
@@ -451,23 +467,21 @@ function renderWatchlist() {
         return;
     }
 
+    // Sort: Unwatched movies pehle, Watched movies neeche
+    filteredWatchlist.sort((a, b) => Number(a.watched) - Number(b.watched));
+
     let watchedCount = 0;
 
-    watchlist.forEach((item, originalIndex) => {
-        const itemPlaylist = item.playlist || "Default";
-        if (selectedFilter !== "All" && itemPlaylist !== selectedFilter) return;
-
+    filteredWatchlist.forEach((item) => {
         if (item.watched) watchedCount++;
 
-        // Generate Playlist Dropdown Options for Cards
         let playlistOptions = userPlaylists.map(pl => 
-            `<option value="${pl}" ${itemPlaylist === pl ? 'selected' : ''}>${pl}</option>`
+            `<option value="${pl}" ${(item.playlist || "Default") === pl ? 'selected' : ''}>${pl}</option>`
         ).join("");
 
-        // Streaming Links Render Format (Watchmode Data)
         let streamingUI = "";
         if (item.streamingSources && item.streamingSources.length > 0) {
-            const topSources = item.streamingSources.slice(0, 2); // Max 2 platforms preview
+            const topSources = item.streamingSources.slice(0, 2);
             streamingUI = `<div class="streaming-info">
                 <small>Available on: ${topSources.map(s => `<a href="${s.web_url}" target="_blank" style="color: #00d2ff;">${s.name}</a>`).join(", ")}</small>
             </div>`;
@@ -488,16 +502,16 @@ function renderWatchlist() {
 
                 <div class="playlist-selector">
                     <span>Playlist:</span>
-                    <select onchange="changeMoviePlaylist(${originalIndex}, this.value)">
+                    <select onchange="changeMoviePlaylist(${item.originalIndex}, this.value)">
                         ${playlistOptions}
                     </select>
                 </div>
 
                 <div class="card-actions">
                     <label class="checkbox-label">
-                        <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${originalIndex})"> Watched
+                        <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${item.originalIndex})"> Watched
                     </label>
-                    <button class="btn-delete" onclick="removeFromWatchlist(${originalIndex})">Remove</button>
+                    <button class="btn-delete" onclick="removeFromWatchlist(${item.originalIndex})">Remove</button>
                 </div>
             </div>
         `;
@@ -507,9 +521,9 @@ function renderWatchlist() {
     updateProgressBar(watchedCount, filteredWatchlist.length);
 }
 
-function toggleWatched(index) {
+function toggleWatched(originalIndex) {
     if (!activeUser) return;
-    watchlist[index].watched = !watchlist[index].watched;
+    watchlist[originalIndex].watched = !watchlist[originalIndex].watched;
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
@@ -523,9 +537,9 @@ function updateProgressBar(watched, total) {
     bar.style.width = `${percentage}%`;
 }
 
-function removeFromWatchlist(index) {
+function removeFromWatchlist(originalIndex) {
     if (!activeUser) return;
-    watchlist.splice(index, 1);
+    watchlist.splice(originalIndex, 1);
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
