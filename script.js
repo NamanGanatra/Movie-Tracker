@@ -366,7 +366,6 @@ async function deletePlaylist() {
 
     if (confirmDelete !== "DELETE") return;
 
-    // Relocate movies in deleted playlist back to Default
     watchlist = watchlist.map(item => {
         if (item.playlist === currentFilter) {
             return { ...item, playlist: "Default" };
@@ -374,10 +373,8 @@ async function deletePlaylist() {
         return item;
     });
 
-    // Remove selected playlist
     userPlaylists = userPlaylists.filter(pl => pl !== currentFilter);
 
-    // Save changes to Database
     db.ref("users/" + activeUser + "/playlists").set(userPlaylists);
     db.ref("watchlists/" + activeUser).set(watchlist)
         .then(async () => {
@@ -402,7 +399,7 @@ function changeMoviePlaylist(originalIndex, newPlaylist) {
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
-// OMDb API Fetch Function
+// OMDb API Fetch Function (Uses IMDb ID direct query if available for maximum accuracy)
 async function fetchFromOMDb(title, year = "", type = "") {
     try {
         let url = `https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&t=${encodeURIComponent(title)}`;
@@ -413,6 +410,12 @@ async function fetchFromOMDb(title, year = "", type = "") {
         const data = await res.json();
         
         if (data.Response === "True") {
+            // Fetch detailed response by ID to get totalSeasons reliably
+            if (data.imdbID) {
+                const detailedRes = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&i=${data.imdbID}`);
+                const detailedData = await detailedRes.json();
+                if (detailedData.Response === "True") return detailedData;
+            }
             return data;
         }
         return null;
@@ -420,6 +423,43 @@ async function fetchFromOMDb(title, year = "", type = "") {
         console.error("OMDb API Fetch Error:", err);
         return null;
     }
+}
+
+// Fast and Precise Total Series Calculation
+async function getSeriesTotalRuntime(imdbID, totalSeasons, avgEpRuntime) {
+    const seasons = parseInt(totalSeasons, 10);
+    const epMins = getRuntimeInMinutes(avgEpRuntime) || 50; // Standard TV ep duration fallback
+
+    if (!imdbID || isNaN(seasons) || seasons <= 0) {
+        return avgEpRuntime || "N/A";
+    }
+
+    try {
+        let seasonPromises = [];
+        for (let s = 1; s <= seasons; s++) {
+            seasonPromises.push(
+                fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&i=${imdbID}&Season=${s}`).then(r => r.json())
+            );
+        }
+
+        const seasonResults = await Promise.all(seasonPromises);
+        let totalEpisodes = 0;
+
+        seasonResults.forEach(sData => {
+            if (sData && sData.Response === "True" && Array.isArray(sData.Episodes)) {
+                totalEpisodes += sData.Episodes.length;
+            }
+        });
+
+        if (totalEpisodes > 0) {
+            const calculatedTotalMins = totalEpisodes * epMins;
+            return `${calculatedTotalMins} min (${totalEpisodes} eps)`;
+        }
+    } catch (err) {
+        console.error("Error fetching season episodes:", err);
+    }
+
+    return avgEpRuntime || "N/A";
 }
 
 // Watchmode API Fetch Function
@@ -460,7 +500,6 @@ async function addMovie() {
     const type = typeInput ? typeInput.value : "";
     const playlist = playlistSelect ? playlistSelect.value : "Default";
 
-    // Check if movie already exists in user's watchlist
     const isAlreadyAdded = watchlist.some(movie => 
         movie.Title.toLowerCase() === title.toLowerCase()
     );
@@ -475,7 +514,7 @@ async function addMovie() {
         return;
     }
 
-    const omdbData = await fetchFromOMDb(title, year, type);
+    let omdbData = await fetchFromOMDb(title, year, type);
 
     if (omdbData) {
         const isOfficialTitleAdded = watchlist.some(movie => 
@@ -497,6 +536,7 @@ async function addMovie() {
     let newMovie = {
         Title: title,
         Year: year || "N/A",
+        Released: "N/A",
         Type: type || "movie",
         Poster: "https://via.placeholder.com/300x450?text=" + encodeURIComponent(title),
         imdbRating: "N/A",
@@ -510,11 +550,17 @@ async function addMovie() {
     if (omdbData) {
         newMovie.Title = omdbData.Title;
         newMovie.Year = omdbData.Year;
+        newMovie.Released = omdbData.Released || omdbData.Year || "N/A";
         newMovie.Type = omdbData.Type;
         newMovie.Poster = omdbData.Poster !== "N/A" ? omdbData.Poster : newMovie.Poster;
         newMovie.imdbRating = omdbData.imdbRating;
         newMovie.imdbID = omdbData.imdbID;
-        newMovie.Runtime = omdbData.Runtime || "N/A";
+
+        if (omdbData.Type === "series" && omdbData.totalSeasons) {
+            newMovie.Runtime = await getSeriesTotalRuntime(omdbData.imdbID, omdbData.totalSeasons, omdbData.Runtime);
+        } else {
+            newMovie.Runtime = omdbData.Runtime || "N/A";
+        }
 
         if (omdbData.imdbID) {
             newMovie.streamingSources = await fetchStreamingSources(omdbData.imdbID);
@@ -543,6 +589,7 @@ function renderMovieCard(item) {
     }
 
     const runtimeDisplay = item.Runtime && item.Runtime !== "N/A" ? item.Runtime : "Runtime: N/A";
+    const releaseDateDisplay = (item.Released && item.Released !== "N/A") ? item.Released : (item.Year || "N/A");
 
     const card = document.createElement("div");
     card.className = `movie-card ${item.watched ? 'watched' : ''}`;
@@ -553,7 +600,7 @@ function renderMovieCard(item) {
         </div>
         <div class="card-content">
             <h3 class="movie-title">${item.Title}</h3>
-            <span class="release-date">${item.Year} | ${item.Type || 'movie'}</span>
+            <span class="release-date">${releaseDateDisplay} | ${item.Type || 'movie'}</span>
             <span class="runtime-info">⏱️ ${runtimeDisplay}</span>
             
             ${streamingUI}
