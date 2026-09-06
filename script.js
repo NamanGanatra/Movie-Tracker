@@ -399,7 +399,7 @@ function changeMoviePlaylist(originalIndex, newPlaylist) {
     db.ref("watchlists/" + activeUser).set(watchlist);
 }
 
-// OMDb API Fetch Function (Uses IMDb ID direct query if available for maximum accuracy)
+// OMDb API Fetch Function
 async function fetchFromOMDb(title, year = "", type = "") {
     try {
         let url = `https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&t=${encodeURIComponent(title)}`;
@@ -410,9 +410,8 @@ async function fetchFromOMDb(title, year = "", type = "") {
         const data = await res.json();
         
         if (data.Response === "True") {
-            // Fetch detailed response by ID to get totalSeasons reliably
             if (data.imdbID) {
-                const detailedRes = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&i=${data.imdbID}`);
+                const detailedRes = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&i=${data.imdbID}&plot=full`);
                 const detailedData = await detailedRes.json();
                 if (detailedData.Response === "True") return detailedData;
             }
@@ -425,10 +424,41 @@ async function fetchFromOMDb(title, year = "", type = "") {
     }
 }
 
+// Helper to convert total minutes purely into hours number/string without any extra 'm'
+function formatMinutesToHours(totalMins) {
+    if (!totalMins || isNaN(totalMins) || totalMins <= 0) return "0";
+    const hours = totalMins / 60;
+    return Number.isInteger(hours) ? hours.toString() : hours.toFixed(2);
+}
+
+// Accurately parse any runtime string into TOTAL MINUTES
+function getRuntimeInMinutes(runtimeStr) {
+    if (!runtimeStr || runtimeStr === "N/A") return 0;
+    const str = String(runtimeStr).toLowerCase().trim();
+
+    if (str.includes("h")) {
+        const hMatch = str.match(/(\d+)\s*h/);
+        const mMatch = str.match(/(\d+)\s*m/);
+        const hours = hMatch ? parseInt(hMatch[1], 10) : 0;
+        const mins = mMatch ? parseInt(mMatch[1], 10) : 0;
+        return (hours * 60) + mins;
+    }
+
+    if (str.includes("hrs") || str.includes("hr")) {
+        const floatMatch = str.match(/(\d+(\.\d+)?)/);
+        if (floatMatch) {
+            return Math.round(parseFloat(floatMatch[1]) * 60);
+        }
+    }
+
+    const match = str.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
+}
+
 // Fast and Precise Total Series Calculation
 async function getSeriesTotalRuntime(imdbID, totalSeasons, avgEpRuntime) {
     const seasons = parseInt(totalSeasons, 10);
-    const epMins = getRuntimeInMinutes(avgEpRuntime) || 50; // Standard TV ep duration fallback
+    const epMins = getRuntimeInMinutes(avgEpRuntime) || 50;
 
     if (!imdbID || isNaN(seasons) || seasons <= 0) {
         return avgEpRuntime || "N/A";
@@ -462,6 +492,29 @@ async function getSeriesTotalRuntime(imdbID, totalSeasons, avgEpRuntime) {
     return avgEpRuntime || "N/A";
 }
 
+// Helper to get OTT Provider Logo by Source Name
+function getOttIconUrl(sourceName, logoUrl = "") {
+    if (logoUrl && (logoUrl.endsWith(".png") || logoUrl.endsWith(".jpg") || logoUrl.endsWith(".webp") || logoUrl.endsWith(".svg"))) {
+        return logoUrl;
+    }
+    
+    const name = (sourceName || "").toLowerCase();
+    
+    if (name.includes("netflix")) return "https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico";
+    if (name.includes("prime") || name.includes("amazon")) return "https://m.media-amazon.com/images/G/01/digital/video/web/logo-min-primary._CB483515082_.png";
+    if (name.includes("hotstar") || name.includes("disney")) return "https://www.hotstar.com/favicons/android-chrome-192x192.png";
+    if (name.includes("apple")) return "https://tv.apple.com/favicon.ico";
+    if (name.includes("hulu")) return "https://www.hulu.com/favicon.ico";
+    if (name.includes("hbomax") || name.includes("max")) return "https://www.max.com/favicon.ico";
+    if (name.includes("jiocinema") || name.includes("jio")) return "https://www.jiocinema.com/favicon.ico";
+    if (name.includes("zee5") || name.includes("zee")) return "https://www.zee5.com/favicon.ico";
+    if (name.includes("sony")) return "https://www.sonyliv.com/favicon.ico";
+    if (name.includes("youtube")) return "https://www.youtube.com/s/desktop/f1e737c3/img/favicon_144x144.png";
+    if (name.includes("google")) return "https://ssl.gstatic.com/images/branding/product/1x/google_play_movies_tv_64dp.png";
+    
+    return "https://cdn-icons-png.flaticon.com/512/1179/1179120.png";
+}
+
 // Watchmode API Fetch Function
 async function fetchStreamingSources(imdbID) {
     if (!imdbID || imdbID === "N/A" || !WATCHMODE_API_KEY) {
@@ -479,11 +532,58 @@ async function fetchStreamingSources(imdbID) {
     }
 }
 
-// Helper function to extract numeric runtime in minutes
-function getRuntimeInMinutes(runtimeStr) {
-    if (!runtimeStr || runtimeStr === "N/A") return 0;
-    const match = runtimeStr.match(/\d+/);
-    return match ? parseInt(match[0], 10) : 0;
+// Helper function to parse release dates for sorting
+function parseReleaseDate(dateStr) {
+    if (!dateStr || dateStr === "N/A") return 0;
+    const parsedDate = Date.parse(dateStr);
+    if (!isNaN(parsedDate)) return parsedDate;
+    const yearMatch = dateStr.match(/\d{4}/);
+    return yearMatch ? new Date(parseInt(yearMatch[0], 10), 0, 1).getTime() : 0;
+}
+
+// OTT Filtering Logic
+function filterByOttPlatform(items, selectedOtt) {
+    if (!selectedOtt || selectedOtt === "All") return items;
+
+    return items.filter(item => {
+        if (!item.streamingSources || item.streamingSources.length === 0) return false;
+        
+        return item.streamingSources.some(source => {
+            const sName = (source.name || "").toLowerCase();
+            return sName.includes(selectedOtt.toLowerCase());
+        });
+    });
+}
+
+// Sort items array based on selected strategy
+function sortMovieList(items, sortStrategy) {
+    return items.sort((a, b) => {
+        if (sortStrategy === "imdbDesc") {
+            const ratingA = parseFloat(a.imdbRating) || 0;
+            const ratingB = parseFloat(b.imdbRating) || 0;
+            return ratingB - ratingA;
+        } else if (sortStrategy === "imdbAsc") {
+            const ratingA = parseFloat(a.imdbRating) || 0;
+            const ratingB = parseFloat(b.imdbRating) || 0;
+            return ratingA - ratingB;
+        } else if (sortStrategy === "releaseDesc") {
+            const dateA = parseReleaseDate(a.Released || a.Year);
+            const dateB = parseReleaseDate(b.Released || b.Year);
+            return dateB - dateA;
+        } else if (sortStrategy === "releaseAsc") {
+            const dateA = parseReleaseDate(a.Released || a.Year);
+            const dateB = parseReleaseDate(b.Released || b.Year);
+            return dateA - dateB;
+        } else if (sortStrategy === "ott") {
+            const hasOttA = (a.streamingSources && a.streamingSources.length > 0) ? 1 : 0;
+            const hasOttB = (b.streamingSources && b.streamingSources.length > 0) ? 1 : 0;
+            if (hasOttB !== hasOttA) {
+                return hasOttB - hasOttA;
+            }
+            return (b.streamingSources ? b.streamingSources.length : 0) - (a.streamingSources ? a.streamingSources.length : 0);
+        }
+        return 0;
+    });
 }
 
 // Add Movie with Duplicate Check
@@ -537,6 +637,8 @@ async function addMovie() {
         Title: title,
         Year: year || "N/A",
         Released: "N/A",
+        Genre: "N/A",
+        Plot: "No description available.",
         Type: type || "movie",
         Poster: "https://via.placeholder.com/300x450?text=" + encodeURIComponent(title),
         imdbRating: "N/A",
@@ -551,6 +653,8 @@ async function addMovie() {
         newMovie.Title = omdbData.Title;
         newMovie.Year = omdbData.Year;
         newMovie.Released = omdbData.Released || omdbData.Year || "N/A";
+        newMovie.Genre = omdbData.Genre || "N/A";
+        newMovie.Plot = omdbData.Plot || "No description available.";
         newMovie.Type = omdbData.Type;
         newMovie.Poster = omdbData.Poster !== "N/A" ? omdbData.Poster : newMovie.Poster;
         newMovie.imdbRating = omdbData.imdbRating;
@@ -574,6 +678,41 @@ async function addMovie() {
     if (yearInput) yearInput.value = "";
 }
 
+// Show Movie Details Modal Function
+async function showAboutModal(originalIndex) {
+    const item = watchlist[originalIndex];
+    if (!item) return;
+
+    let posterUrl = item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/300x450?text=No+Image';
+    let plotText = item.Plot || "No plot summary available.";
+    let genreText = item.Genre || "N/A";
+
+    if ((!item.Plot || item.Plot === "No description available.") && item.imdbID && item.imdbID !== "N/A") {
+        try {
+            const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&i=${item.imdbID}&plot=full`);
+            const data = await res.json();
+            if (data.Response === "True") {
+                plotText = data.Plot || plotText;
+                genreText = data.Genre || genreText;
+                watchlist[originalIndex].Plot = plotText;
+                watchlist[originalIndex].Genre = genreText;
+                db.ref("watchlists/" + activeUser).set(watchlist);
+            }
+        } catch (err) {
+            console.error("Error fetching plot details:", err);
+        }
+    }
+
+    document.getElementById("modalPoster").src = posterUrl;
+    document.getElementById("modalTitle").innerText = item.Title;
+    document.getElementById("modalYear").innerText = `Released: ${item.Released || item.Year || 'N/A'}`;
+    document.getElementById("modalGenre").innerText = `Genre: ${genreText}`;
+    document.getElementById("modalRating").innerText = `IMDb Rating: ⭐ ${item.imdbRating || 'N/A'}`;
+    document.getElementById("modalPlot").innerText = plotText;
+
+    openModal("aboutModal");
+}
+
 // Render HTML Movie Card Element
 function renderMovieCard(item) {
     let playlistOptions = userPlaylists.map(pl => 
@@ -582,13 +721,50 @@ function renderMovieCard(item) {
 
     let streamingUI = "";
     if (item.streamingSources && item.streamingSources.length > 0) {
-        const topSources = item.streamingSources.slice(0, 2);
-        streamingUI = `<div class="streaming-info">
-            <small>Available on: ${topSources.map(s => `<a href="${s.web_url}" target="_blank" style="color: #00d2ff;">${s.name}</a>`).join(", ")}</small>
-        </div>`;
+        const uniqueSources = [];
+        const seenNames = new Set();
+        
+        item.streamingSources.forEach(s => {
+            if (s.name && !seenNames.has(s.name.toLowerCase())) {
+                seenNames.add(s.name.toLowerCase());
+                uniqueSources.push(s);
+            }
+        });
+
+        const topSources = uniqueSources.slice(0, 4);
+
+        let iconsHTML = topSources.map(s => {
+            const iconUrl = getOttIconUrl(s.name, s.logo_100px);
+            const redirectUrl = s.web_url || '#';
+            return `
+                <a href="${redirectUrl}" target="_blank" rel="noopener noreferrer" class="ott-link" title="Watch on ${s.name}">
+                    <img src="${iconUrl}" alt="${s.name}" class="ott-icon" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1179/1179120.png';">
+                </a>
+            `;
+        }).join("");
+
+        streamingUI = `
+            <div class="streaming-info">
+                <span class="ott-label">Watch on:</span>
+                <div class="ott-icons-container">
+                    ${iconsHTML}
+                </div>
+            </div>
+        `;
     }
 
-    const runtimeDisplay = item.Runtime && item.Runtime !== "N/A" ? item.Runtime : "Runtime: N/A";
+    let runtimeDisplay = "Runtime: N/A";
+    if (item.Runtime && item.Runtime !== "N/A") {
+        const mins = getRuntimeInMinutes(item.Runtime);
+        if (mins > 0) {
+            const hrs = formatMinutesToHours(mins);
+            const extraInfo = item.Runtime.includes("(") ? item.Runtime.substring(item.Runtime.indexOf("(")) : "";
+            runtimeDisplay = `${hrs} hrs ${extraInfo}`.trim();
+        } else {
+            runtimeDisplay = item.Runtime;
+        }
+    }
+
     const releaseDateDisplay = (item.Released && item.Released !== "N/A") ? item.Released : (item.Year || "N/A");
 
     const card = document.createElement("div");
@@ -613,6 +789,7 @@ function renderMovieCard(item) {
             </div>
 
             <div class="card-actions">
+                <button class="btn-about" onclick="showAboutModal(${item.originalIndex})">About</button>
                 <label class="checkbox-label">
                     <input type="checkbox" ${item.watched ? 'checked' : ''} onchange="toggleWatched(${item.originalIndex})"> Watched
                 </label>
@@ -623,21 +800,22 @@ function renderMovieCard(item) {
     return card;
 }
 
-// Render Watchlist with Grouped View in 'All'
+// Render Watchlist with Grouped View & Filters
 function renderWatchlist() {
     const grid = document.getElementById("movieGrid");
     const filterSelect = document.getElementById("playlistFilterSelect");
+    const sortSelect = document.getElementById("sortSelect");
+    const ottFilterSelect = document.getElementById("ottFilterSelect");
     const sectionTitle = document.getElementById("playlistSectionTitle");
+    
     const selectedFilter = filterSelect ? filterSelect.value : "All";
+    const selectedSort = sortSelect ? sortSelect.value : "default";
+    const selectedOtt = ottFilterSelect ? ottFilterSelect.value : "All";
 
     if (!grid) return;
 
     if (sectionTitle) {
-        if (selectedFilter === "All") {
-            sectionTitle.innerText = "ALL MOVIES";
-        } else {
-            sectionTitle.innerText = selectedFilter.toUpperCase();
-        }
+        sectionTitle.innerText = selectedFilter === "All" ? "ALL MOVIES" : selectedFilter.toUpperCase();
     }
 
     grid.innerHTML = "";
@@ -657,6 +835,9 @@ function renderWatchlist() {
     if (selectedFilter === "All") {
         userPlaylists.forEach(pl => {
             let plMovies = mappedList.filter(item => (item.playlist || "Default") === pl);
+            
+            plMovies = filterByOttPlatform(plMovies, selectedOtt);
+
             if (plMovies.length > 0) {
                 const groupHeader = document.createElement("div");
                 groupHeader.style.gridColumn = "1 / -1";
@@ -668,7 +849,7 @@ function renderWatchlist() {
                 groupHeader.innerText = `${pl.toUpperCase()} (${plMovies.length})`;
                 grid.appendChild(groupHeader);
 
-                plMovies.sort((a, b) => Number(a.watched) - Number(b.watched));
+                plMovies = sortMovieList(plMovies, selectedSort);
 
                 plMovies.forEach(item => {
                     if (item.watched) {
@@ -683,13 +864,15 @@ function renderWatchlist() {
     } else {
         let filteredWatchlist = mappedList.filter(item => (item.playlist || "Default") === selectedFilter);
 
+        filteredWatchlist = filterByOttPlatform(filteredWatchlist, selectedOtt);
+
         if (filteredWatchlist.length === 0) {
-            grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1; padding: 20px;">No movies found in this playlist.</p>`;
+            grid.innerHTML = `<p style="color: #a3a3a3; text-align: center; grid-column: 1/-1; padding: 20px;">No movies found for selected filters.</p>`;
             updateProgressBar(0, 0, 0);
             return;
         }
 
-        filteredWatchlist.sort((a, b) => Number(a.watched) - Number(b.watched));
+        filteredWatchlist = sortMovieList(filteredWatchlist, selectedSort);
 
         filteredWatchlist.forEach((item) => {
             if (item.watched) {
@@ -717,12 +900,12 @@ function updateProgressBar(watched, total, totalMinutes) {
     const progressPercentageEl = document.getElementById("progressPercentage");
     const bar = document.getElementById("progressBar");
 
-    const hours = (totalMinutes / 60).toFixed(1);
+    const timeFormatted = formatMinutesToHours(totalMinutes);
     const percentage = total > 0 ? Math.round((watched / total) * 100) : 0;
 
     if (totalTitlesEl) totalTitlesEl.innerText = total;
     if (watchedTitlesEl) watchedTitlesEl.innerText = watched;
-    if (watchTimeEl) watchTimeEl.innerText = hours;
+    if (watchTimeEl) watchTimeEl.innerText = timeFormatted;
     if (progressPercentageEl) progressPercentageEl.innerText = `${percentage}%`;
     if (bar) bar.style.width = `${percentage}%`;
 }
