@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOVIE TRACKER</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2.4">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -82,6 +82,7 @@
 
             <!-- Search & Filter Controls -->
             <div class="controls-card">
+                <!-- Row 1: Search and Add -->
                 <div class="search-box">
                     <input type="text" id="movieInput" placeholder="Movie or TV Show Title..." onkeypress="handleKeyPress(event)">
                     <input type="number" id="yearInput" placeholder="Year (Opt.)" onkeypress="handleKeyPress(event)">
@@ -96,13 +97,39 @@
                     <button class="btn-primary" onclick="addMovie()">Search & Add</button>
                 </div>
 
+                <!-- Row 2: Playlist Controls -->
                 <div class="filter-box">
-                    <label>Filter View:</label>
+                    <label>Filter Playlist:</label>
                     <select id="playlistFilterSelect" onchange="handleFilterChange()">
                         <option value="All">All Playlists</option>
                     </select>
                     <button class="btn-secondary" onclick="createPlaylist()">+ New Playlist</button>
                     <button class="btn-delete" onclick="deletePlaylist()">Delete Playlist</button>
+                </div>
+
+                <!-- Row 3: Sort & OTT Filters -->
+                <div class="filter-box secondary-controls">
+                    <label>Sort By:</label>
+                    <select id="sortSelect" onchange="handleFilterChange()">
+                        <option value="default">Default Order</option>
+                        <option value="imdbDesc">Highest IMDb Rating</option>
+                        <option value="imdbAsc">Lowest IMDb Rating</option>
+                        <option value="releaseDesc">Release Date (Newest)</option>
+                        <option value="releaseAsc">Release Date (Oldest)</option>
+                    </select>
+
+                    <label>Filter OTT Platform:</label>
+                    <select id="ottFilterSelect" onchange="handleFilterChange()">
+                        <option value="All">All Platforms</option>
+                        <option value="netflix">Netflix</option>
+                        <option value="prime">Amazon Prime</option>
+                        <option value="hotstar">Disney+ Hotstar</option>
+                        <option value="jiocinema">JioCinema</option>
+                        <option value="zee5">Zee5</option>
+                        <option value="sony">SonyLIV</option>
+                        <option value="apple">Apple TV+</option>
+                        <option value="youtube">YouTube / Google</option>
+                    </select>
                 </div>
             </div>
 
@@ -157,6 +184,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.1"></script>
+    <script src="script.js?v=2.4"></script>
 </body>
 </html>
