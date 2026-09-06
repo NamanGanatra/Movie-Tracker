@@ -191,6 +191,18 @@ body {
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.secondary-controls {
+    border-top: 1px solid #282828;
+    padding-top: 12px;
+}
+
+.filter-box label {
+    font-size: 13px;
+    color: #aaaaaa;
+    font-weight: 600;
 }
 
 input, select {
@@ -209,6 +221,7 @@ input[type="text"] {
 
 select {
     flex: 1;
+    min-width: 140px;
 }
 
 .section-title {
@@ -246,6 +259,17 @@ button {
 
 .btn-secondary:hover {
     background: #383838;
+}
+
+.btn-about {
+    background: #0284c7;
+    color: #ffffff;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.btn-about:hover {
+    background: #0369a1;
 }
 
 .btn-delete, .btn-logout {
@@ -341,9 +365,48 @@ button {
     gap: 4px;
 }
 
+/* Streaming OTT Info & Icons Styling */
 .streaming-info {
     font-size: 11px;
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ott-label {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.ott-icons-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
     margin-top: 2px;
+}
+
+.ott-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+
+.ott-link:hover {
+    transform: scale(1.15);
+}
+
+.ott-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    object-fit: cover;
+    background-color: #222222;
+    border: 1px solid #333333;
+    padding: 1px;
 }
 
 .playlist-selector {
@@ -366,6 +429,7 @@ button {
     align-items: center;
     margin-top: auto;
     padding-top: 8px;
+    gap: 6px;
 }
 
 .checkbox-label {
@@ -385,7 +449,7 @@ button {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     justify-content: center;
     align-items: center;
     z-index: 1000;
@@ -403,6 +467,54 @@ button {
     gap: 14px;
 }
 
+.modal-large {
+    max-width: 650px;
+}
+
+.modal-body {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.modal-body img {
+    width: 180px;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.modal-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.modal-info h2 {
+    font-size: 20px;
+    color: #ffffff;
+}
+
+.modal-meta {
+    font-size: 13px;
+    color: #38bdf8;
+}
+
+.modal-rating {
+    font-size: 14px;
+    font-weight: bold;
+    color: #f5c518;
+}
+
+.modal-plot {
+    font-size: 13px;
+    color: #cccccc;
+    line-height: 1.5;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;
@@ -418,5 +530,13 @@ button {
     .search-box, .filter-box {
         flex-direction: column;
         align-items: stretch;
+    }
+    .modal-body {
+        flex-direction: column;
+        align-items: center;
+    }
+    .modal-body img {
+        width: 140px;
+        height: 200px;
     }
 }
