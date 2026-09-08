@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOVIE TRACKER</title>
+    <link rel="stylesheet" href="styles.css?v=2.4">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+    <!-- Auth Screen -->
+    <div id="authScreen" class="auth-container">
+        <div class="auth-card">
+            <h2>Welcome Back</h2>
+            <p id="noProfilesMsg" style="display: none; color: #94a3b8;">No profiles found. Please create one.</p>
+            
+            <div id="loginFormContainer" class="form-group">
+                <label for="loginUserSelect">Select Profile</label>
+                <select id="loginUserSelect"></select>
+                <input type="password" id="loginPinInput" placeholder="4-Digit PIN" maxlength="4">
+                
+                <div class="auth-actions">
+                    <button class="btn-primary" onclick="login()">Login</button>
+                    <button class="btn-delete" onclick="handleDeleteProfile()">Delete Profile</button>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <div class="auth-footer">
+                <button class="btn-secondary" onclick="openModal('registerModal')">+ Create New Profile</button>
+                <button class="btn-danger-link" onclick="handleClearAllProfiles()">Reset All Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" style="display: none;">
+        <!-- Header Nav -->
+        <header class="top-nav">
+            <div class="user-info">
+                <span id="activeUserLabel">User: </span>
+                <button class="btn-secondary" onclick="handleChangePinModal()">Change PIN</button>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <main class="container">
+            <h1 id="welcomeTitle">Watchlist</h1>
+            <p class="subtitle">Track movies & TV shows, check ratings, and monitor watch progress.</p>
+
+            <!-- Stat Cards & Progress Section -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div>TOTAL TITLES</div>
+                    <div id="statTotalTitles" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>WATCHED</div>
+                    <div id="statWatchedTitles" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>TOTAL WATCH TIME</div>
+                    <div class="stat-value">
+                        <span id="statWatchTime">0</span> <span class="unit-text">hrs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-section">
+                <div class="progress-info">
+                    <span>Completion Progress</span>
+                    <span id="progressPercentage">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="progressBar" class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <div class="controls-card">
+                <!-- Row 1: Search and Add -->
+                <div class="search-box">
+                    <input type="text" id="movieInput" placeholder="Movie or TV Show Title..." onkeypress="handleKeyPress(event)">
+                    <input type="number" id="yearInput" placeholder="Year (Opt.)" onkeypress="handleKeyPress(event)">
+                    <select id="typeInput">
+                        <option value="">All Types</option>
+                        <option value="movie">Movie</option>
+                        <option value="series">Series</option>
+                    </select>
+                    <select id="addPlaylistSelect">
+                        <option value="Default">Default Playlist</option>
+                    </select>
+                    <button class="btn-primary" onclick="addMovie()">Search & Add</button>
+                </div>
+
+                <!-- Row 2: Playlist Controls -->
+                <div class="filter-box">
+                    <label>Filter Playlist:</label>
+                    <select id="playlistFilterSelect" onchange="handleFilterChange()">
+                        <option value="All">All Playlists</option>
+                    </select>
+                    <button class="btn-secondary" onclick="createPlaylist()">+ New Playlist</button>
+                    <button class="btn-delete" onclick="deletePlaylist()">Delete Playlist</button>
+                </div>
+
+                <!-- Row 3: Sort & OTT Filters -->
+                <div class="filter-box secondary-controls">
+                    <label>Sort By:</label>
+                    <select id="sortSelect" onchange="handleFilterChange()">
+                        <option value="default">Default Order</option>
+                        <option value="imdbDesc">Highest IMDb Rating</option>
+                        <option value="imdbAsc">Lowest IMDb Rating</option>
+                        <option value="releaseDesc">Release Date (Newest)</option>
+                        <option value="releaseAsc">Release Date (Oldest)</option>
+                    </select>
+
+                    <label>Filter OTT Platform:</label>
+                    <select id="ottFilterSelect" onchange="handleFilterChange()">
+                        <option value="All">All Platforms</option>
+                        <option value="netflix">Netflix</option>
+                        <option value="prime">Amazon Prime</option>
+                        <option value="hotstar">Disney+ Hotstar</option>
+                        <option value="jiocinema">JioCinema</option>
+                        <option value="zee5">Zee5</option>
+                        <option value="sony">SonyLIV</option>
+                        <option value="apple">Apple TV+</option>
+                        <option value="youtube">YouTube / Google</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dynamic Playlist Section Title -->
+            <h2 id="playlistSectionTitle" class="section-title">ALL MOVIES</h2>
+
+            <!-- Dynamic Movies Grid -->
+            <div id="movieGrid" class="movie-grid"></div>
+        </main>
+    </div>
+
+    <!-- Register Profile Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content glass-card">
+            <h3>Create Profile</h3>
+            <input type="text" id="regNameInput" placeholder="Profile Name">
+            <input type="password" id="regPinInput" placeholder="4-Digit PIN" maxlength="4">
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="registerUser()">Save Profile</button>
+                <button class="btn-secondary" onclick="closeModal('registerModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Center Modal -->
+    <div id="customModal" class="modal">
+        <div class="modal-content glass-card glowing-modal">
+            <h3 id="customModalTitle">PIN Security</h3>
+            <p id="customModalDesc" class="modal-desc"></p>
+            <input type="password" id="customModalInput" placeholder="Enter PIN..." maxlength="20">
+            <div class="modal-actions">
+                <button id="customModalCancelBtn" class="btn-secondary" onclick="closeCustomModal(false)">Cancel</button>
+                <button id="customModalConfirmBtn" class="btn-primary" onclick="closeCustomModal(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Movie Details Modal -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content modal-large glass-card">
+            <div class="modal-body">
+                <img id="modalPoster" src="" alt="Poster">
+                <div class="modal-info">
+                    <h2 id="modalTitle"></h2>
+                    <p id="modalYear" class="modal-meta"></p>
+                    <p id="modalGenre" class="modal-meta"></p>
+                    <p id="modalRating" class="modal-rating"></p>
+                    <p id="modalPlot" class="modal-plot"></p>
+                    <button class="btn-secondary" onclick="closeModal('aboutModal')">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=2.4"></script>
+</body>
+</html>
